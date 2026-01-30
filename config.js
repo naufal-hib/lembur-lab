@@ -5,11 +5,11 @@
 // STEP 1: Ganti dengan Google Sheets ID Anda
 // Cara mendapatkan: Buka Google Sheets, lihat URL:
 // https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit
-const SPREADSHEET_ID = 'GANTI_DENGAN_SPREADSHEET_ID_ANDA';
+const SPREADSHEET_ID = '1Us4RPm72oijMOnevEpnlxeO9g1wtpQ8jD5kmys_cGOk';
 
 // STEP 2: Ganti dengan API Key Anda
 // Cara mendapatkan: Lihat panduan di SETUP-GUIDE.md
-const API_KEY = 'GANTI_DENGAN_API_KEY_ANDA';
+const API_KEY = 'AIzaSyBW6vyEQMJ5XoWm6ShpKYn4134aLWfpopQ';
 
 // ============================================
 // KONFIGURASI SHEET NAMES
