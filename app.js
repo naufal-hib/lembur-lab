@@ -134,8 +134,33 @@ async function loadAllData() {
         return true;
     } catch (error) {
         hideLoading();
-        showAlert('Gagal memuat data: ' + error.message, 'error');
-        console.error('Error loading data:', error);
+        
+        // User-friendly error messages
+        let userMessage = 'Gagal memuat data. ';
+        
+        if (error.message.includes('SPREADSHEET_ID')) {
+            userMessage += 'Konfigurasi sistem belum lengkap. Hubungi administrator.';
+        } else if (error.message.includes('API_KEY')) {
+            userMessage += 'Konfigurasi sistem belum lengkap. Hubungi administrator.';
+        } else if (error.message.includes('403')) {
+            userMessage += 'Tidak memiliki akses ke data. Hubungi administrator.';
+        } else if (error.message.includes('404')) {
+            userMessage += 'Data tidak ditemukan. Hubungi administrator.';
+        } else if (error.message.includes('Unable to parse range')) {
+            userMessage += 'Format data tidak sesuai. Hubungi administrator.';
+        } else {
+            userMessage += 'Terjadi kesalahan. Silakan coba lagi atau hubungi administrator.';
+        }
+        
+        showAlert(userMessage, 'error');
+        
+        // Log detail error to console for debugging
+        console.error('=== ERROR LOADING DATA ===');
+        console.error('Error:', error);
+        console.error('Error message:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('=========================');
+        
         return false;
     }
 }
@@ -199,16 +224,22 @@ async function login(nik, password) {
     showLoading();
     
     // Check if admin
-    if (nik === ADMIN_CONFIG.NIK && password === ADMIN_CONFIG.PASSWORD) {
-        currentUser = {
-            nik: 'admin',
-            nama: 'Administrator',
-            role: 'admin'
-        };
-        saveToLocalStorage('currentUser', currentUser);
-        hideLoading();
-        window.location.href = 'dashboard-admin.html';
-        return;
+    if (nik === ADMIN_CONFIG.NIK) {
+        if (password === ADMIN_CONFIG.PASSWORD) {
+            currentUser = {
+                nik: 'admin',
+                nama: 'Administrator',
+                role: 'admin'
+            };
+            saveToLocalStorage('currentUser', currentUser);
+            hideLoading();
+            window.location.href = 'dashboard-admin.html';
+            return;
+        } else {
+            hideLoading();
+            showAlert('Password admin salah!', 'error');
+            return;
+        }
     }
     
     // Load data if not cached
@@ -221,23 +252,33 @@ async function login(nik, password) {
     }
     
     // Find user
-    const user = allKaryawan.find(k => k.nik === nik && k.password === password);
+    const user = allKaryawan.find(k => k.nik === nik);
     
-    if (user) {
-        currentUser = {
-            nik: user.nik,
-            nama: user.nama,
-            jabatan: user.jabatan,
-            level: user.level,
-            role: 'karyawan'
-        };
-        saveToLocalStorage('currentUser', currentUser);
+    if (!user) {
         hideLoading();
-        window.location.href = 'dashboard-karyawan.html';
-    } else {
-        hideLoading();
-        showAlert('NIK atau password salah!', 'error');
+        showAlert('NIK tidak ditemukan! Pastikan NIK Anda sudah terdaftar.', 'error');
+        console.error('Login failed: NIK not found -', nik);
+        return;
     }
+    
+    if (user.password !== password) {
+        hideLoading();
+        showAlert('Password salah! Silakan coba lagi.', 'error');
+        console.error('Login failed: Wrong password for NIK -', nik);
+        return;
+    }
+    
+    // Login success
+    currentUser = {
+        nik: user.nik,
+        nama: user.nama,
+        jabatan: user.jabatan,
+        level: user.level,
+        role: 'karyawan'
+    };
+    saveToLocalStorage('currentUser', currentUser);
+    hideLoading();
+    window.location.href = 'dashboard-karyawan.html';
 }
 
 function logout() {
@@ -335,6 +376,9 @@ function renderKaryawanDashboard() {
     if (activeCutOff) {
         const periodText = `${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`;
         document.getElementById('activePeriod').textContent = periodText;
+    } else {
+        document.getElementById('activePeriod').textContent = 'Tidak ada periode aktif';
+        document.getElementById('activePeriod').classList.add('text-red-600');
     }
     
     // Filter lembur for current user and period
@@ -512,6 +556,24 @@ function renderHistoryTable(lemburData) {
     const tbody = document.getElementById('historyTable');
     if (!tbody) return;
     
+    // Check if no data
+    if (!lemburData || lemburData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-lg font-medium">Belum ada data lembur</p>
+                        <p class="text-sm text-gray-400 mt-1">Data lembur Anda akan muncul di sini setelah ada input lembur</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
     // Sort by date descending
     const sortedData = [...lemburData].sort((a, b) => 
         new Date(b.tanggal) - new Date(a.tanggal)
@@ -672,9 +734,16 @@ function renderOverviewTab() {
     document.getElementById('totalInsentifAdmin').textContent = formatCurrency(totalInsentif);
     
     // Display active period
+    const periodElement = document.getElementById('activePeriodAdmin');
     if (activeCutOff) {
         const periodText = `${activeCutOff.bulan}: ${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`;
-        document.getElementById('activePeriodAdmin').textContent = periodText;
+        periodElement.textContent = periodText;
+        periodElement.classList.remove('text-red-600');
+        periodElement.classList.add('text-indigo-600');
+    } else {
+        periodElement.textContent = 'Tidak ada periode aktif. Silakan set periode aktif di sheet CutOff.';
+        periodElement.classList.remove('text-indigo-600');
+        periodElement.classList.add('text-red-600');
     }
 }
 
@@ -713,6 +782,25 @@ function renderLemburTab() {
     if (!tbody) return;
     
     const periodLembur = filterLemburByPeriod(allLembur, activeCutOff);
+    
+    // Check if no data
+    if (!periodLembur || periodLembur.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="px-3 py-8 text-center text-gray-500">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-lg font-medium">Belum ada data lembur</p>
+                        <p class="text-sm text-gray-400 mt-1">Data lembur untuk periode ini belum tersedia</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        document.getElementById('recordCount').textContent = '0';
+        return;
+    }
     
     tbody.innerHTML = periodLembur.map((l, index) => {
         const karyawan = allKaryawan.find(k => k.nik === l.nik);
