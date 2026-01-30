@@ -33,6 +33,7 @@
                     placeholder="Masukkan NIK"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                     required
+                    autocomplete="off"
                 >
             </div>
 
@@ -62,16 +63,16 @@
                 Password default: <span class="font-semibold text-indigo-600">123</span>
             </p>
             <p class="text-xs text-gray-500 mt-2">
-                Anda dapat mengubah password setelah login
+                Admin - NIK: admin, Password: admin123
             </p>
         </div>
+    </div>
 
-        <!-- Loading Spinner -->
-        <div id="loading" style="display: none; position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 999999;">
-            <div style="background-color: white; border-radius: 0.5rem; padding: 2rem; display: flex; flex-direction: column; align-items: center;">
-                <div class="animate-spin" style="border-radius: 50%; height: 4rem; width: 4rem; border-top: 4px solid #4f46e5; border-bottom: 4px solid #4f46e5; margin-bottom: 1rem;"></div>
-                <p style="color: #374151; font-weight: 500;">Memuat data...</p>
-            </div>
+    <!-- Loading Spinner -->
+    <div id="loading" style="display: none; position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 999999;">
+        <div style="background-color: white; border-radius: 0.5rem; padding: 2rem; display: flex; flex-direction: column; align-items: center;">
+            <div class="animate-spin" style="border-radius: 50%; height: 4rem; width: 4rem; border-top: 4px solid #4f46e5; border-bottom: 4px solid #4f46e5; margin-bottom: 1rem;"></div>
+            <p style="color: #374151; font-weight: 500;">Memuat data...</p>
         </div>
     </div>
 
