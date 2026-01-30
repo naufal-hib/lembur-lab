@@ -1,8 +1,192 @@
 // ============================================
+// ADMIN FEATURES - FULL VERSION
+// Import Excel, Manage Cut-Off, Export PDF, Modal Detail
+// ============================================
+
+// ============================================
+// MODAL EMPLOYEE DETAIL
+// ============================================
+
+function viewKaryawanDetail(nik) {
+    const karyawan = allKaryawan.find(k => k.nik === nik);
+    if (!karyawan) {
+        showAlert('Karyawan tidak ditemukan', 'error');
+        return;
+    }
+    
+    const lemburData = allLembur.filter(l => l.nik === nik);
+    const periodLembur = filterLemburByPeriod(lemburData, activeCutOff);
+    
+    let totalJam = 0;
+    let totalInsentif = 0;
+    let totalHariKerja = 0;
+    let totalHariLibur = 0;
+    
+    periodLembur.forEach(l => {
+        const jam = parseJamLembur(l.jamLembur);
+        totalJam += jam;
+        totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
+        
+        if (l.jenisLembur.toLowerCase().includes('libur')) {
+            totalHariLibur++;
+        } else {
+            totalHariKerja++;
+        }
+    });
+    
+    const modalContent = document.getElementById('employeeModalContent');
+    modalContent.innerHTML = `
+        <div class="space-y-6">
+            <!-- Profil Karyawan -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Profil
+                </h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600">NIK</p>
+                        <p class="font-semibold text-gray-800">${karyawan.nik}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Nama Lengkap</p>
+                        <p class="font-semibold text-gray-800">${karyawan.nama}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Jabatan</p>
+                        <p class="font-semibold text-gray-800">${karyawan.jabatan}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Level</p>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${
+                            karyawan.level === 'supervisor' 
+                                ? 'bg-purple-100 text-purple-800' 
+                                : 'bg-blue-100 text-blue-800'
+                        }">
+                            ${karyawan.level}
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Password</p>
+                        <code class="bg-gray-200 px-2 py-1 rounded text-sm">${karyawan.password}</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Periode Aktif -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-indigo-200">
+                <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Statistik Periode ${activeCutOff ? activeCutOff.bulan : 'Aktif'}
+                </h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-indigo-600">${totalJam}</p>
+                        <p class="text-sm text-gray-600 mt-1">Total Jam</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-green-600">${formatCurrency(totalInsentif)}</p>
+                        <p class="text-sm text-gray-600 mt-1">Total Insentif</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-blue-600">${totalHariKerja}</p>
+                        <p class="text-sm text-gray-600 mt-1">Hari Kerja</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-red-600">${totalHariLibur}</p>
+                        <p class="text-sm text-gray-600 mt-1">Hari Libur</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Riwayat Lembur Recent -->
+            <div>
+                <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Riwayat Lembur Terbaru
+                </h4>
+                ${periodLembur.length > 0 ? `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-3 py-2 text-left">Tanggal</th>
+                                    <th class="px-3 py-2 text-left">Jenis</th>
+                                    <th class="px-3 py-2 text-left">Jam</th>
+                                    <th class="px-3 py-2 text-left">Insentif</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${periodLembur.slice(0, 10).map(l => {
+                                    const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
+                                    return `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-3 py-2">${formatDate(l.tanggal)}</td>
+                                            <td class="px-3 py-2">
+                                                <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                                                    l.jenisLembur.toLowerCase().includes('libur') 
+                                                        ? 'bg-red-100 text-red-800' 
+                                                        : 'bg-blue-100 text-blue-800'
+                                                }">
+                                                    ${l.jenisLembur}
+                                                </span>
+                                            </td>
+                                            <td class="px-3 py-2 font-semibold">${l.jamLembur}</td>
+                                            <td class="px-3 py-2 font-semibold text-green-600">${formatCurrency(insentif)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        ${periodLembur.length > 10 ? `
+                            <p class="text-sm text-gray-500 text-center mt-3">
+                                Menampilkan 10 dari ${periodLembur.length} records
+                            </p>
+                        ` : ''}
+                    </div>
+                ` : `
+                    <div class="text-center py-8 text-gray-500">
+                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p>Belum ada data lembur untuk periode ini</p>
+                    </div>
+                `}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <button onclick="exportKaryawanPDF('${nik}')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>Export PDF</span>
+                </button>
+                <button onclick="closeEmployeeModal()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('employeeModal').style.display = 'flex';
+}
+
+function closeEmployeeModal() {
+    document.getElementById('employeeModal').style.display = 'none';
+}
+
+// ============================================
 // IMPORT EXCEL FEATURE
 // ============================================
 
-async function showImportModal() {
+function showImportModal() {
     const modal = document.getElementById('importModal');
     if (modal) {
         modal.style.display = 'flex';
@@ -15,9 +199,14 @@ function closeImportModal() {
         modal.style.display = 'none';
     }
     // Reset form
-    document.getElementById('excelFileInput').value = '';
-    document.getElementById('importPreview').innerHTML = '';
-    document.getElementById('importBtn').disabled = true;
+    const fileInput = document.getElementById('excelFileInput');
+    if (fileInput) fileInput.value = '';
+    
+    const preview = document.getElementById('importPreview');
+    if (preview) preview.innerHTML = '';
+    
+    const importBtn = document.getElementById('importBtn');
+    if (importBtn) importBtn.disabled = true;
 }
 
 async function handleExcelUpload(event) {
@@ -47,14 +236,23 @@ async function readExcelFile(file) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 
-                // Assume data lembur ada di sheet pertama
+                // Read first sheet
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // Convert to JSON
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                // Convert to JSON - skip first 3 rows (title, blank, header that becomes content)
+                // Row 4 is blank, so actual data starts from row 5
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                    range: 3,  // Start from row 4 (0-indexed), which has the actual headers
+                    defval: ''  // Default value for empty cells
+                });
                 
-                resolve(jsonData);
+                // Filter out empty rows
+                const filteredData = jsonData.filter(row => {
+                    return row.NIK && row.TANGGAL && (row['JAM LEMBUR'] || row['JAM LEMBUR ']);
+                });
+                
+                resolve(filteredData);
             } catch (error) {
                 reject(error);
             }
@@ -73,28 +271,11 @@ function displayImportPreview(data) {
     
     if (!data || data.length === 0) {
         preview.innerHTML = '<p class="text-red-600">Tidak ada data yang ditemukan dalam file Excel</p>';
-        return;
-    }
-    
-    // Validate columns
-    const requiredColumns = ['NIK', 'TANGGAL', 'JAM LEMBUR', 'JENIS LEMBUR'];
-    const firstRow = data[0];
-    const missingColumns = requiredColumns.filter(col => !firstRow.hasOwnProperty(col));
-    
-    if (missingColumns.length > 0) {
-        preview.innerHTML = `
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p class="text-red-800 font-semibold">❌ Format file tidak sesuai!</p>
-                <p class="text-red-700 text-sm mt-2">Kolom yang hilang: ${missingColumns.join(', ')}</p>
-                <p class="text-red-600 text-xs mt-2">Pastikan file Excel memiliki kolom: NIK, TANGGAL, JAM LEMBUR, JENIS LEMBUR</p>
-            </div>
-        `;
         document.getElementById('importBtn').disabled = true;
         return;
     }
     
     // Check for duplicates
-    const newDataCount = data.length;
     const { duplicates, newRecords } = detectDuplicates(data);
     
     preview.innerHTML = `
@@ -102,7 +283,7 @@ function displayImportPreview(data) {
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p class="text-blue-800 font-semibold">✅ File valid dan siap diimport</p>
                 <div class="mt-3 space-y-1 text-sm">
-                    <p class="text-blue-700">📊 Total rows dalam file: <strong>${newDataCount}</strong></p>
+                    <p class="text-blue-700">📊 Total rows dalam file: <strong>${data.length}</strong></p>
                     <p class="text-green-700">➕ Data baru yang akan ditambahkan: <strong>${newRecords.length}</strong></p>
                     <p class="text-yellow-700">⚠️ Data duplikat (akan diabaikan): <strong>${duplicates.length}</strong></p>
                 </div>
@@ -110,10 +291,10 @@ function displayImportPreview(data) {
             
             ${duplicates.length > 0 ? `
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p class="text-yellow-800 font-semibold text-sm mb-2">Data Duplikat:</p>
+                    <p class="text-yellow-800 font-semibold text-sm mb-2">Data Duplikat (10 pertama):</p>
                     <div class="max-h-40 overflow-y-auto text-xs space-y-1">
                         ${duplicates.slice(0, 10).map(d => `
-                            <p class="text-yellow-700">• NIK ${d.NIK} - ${formatExcelDate(d.TANGGAL)} - ${d['JAM LEMBUR']}</p>
+                            <p class="text-yellow-700">• NIK ${d.NIK} - ${formatExcelDate(d.TANGGAL)} - ${d['JAM LEMBUR'] || d['JAM LEMBUR '] || '0 Jam'}</p>
                         `).join('')}
                         ${duplicates.length > 10 ? `<p class="text-yellow-600 italic">...dan ${duplicates.length - 10} lagi</p>` : ''}
                     </div>
@@ -136,11 +317,11 @@ function displayImportPreview(data) {
                         <tbody class="divide-y divide-gray-200">
                             ${newRecords.slice(0, 5).map(row => `
                                 <tr>
-                                    <td class="px-2 py-1">${row.NIK}</td>
+                                    <td class="px-2 py-1">${row.NIK || '-'}</td>
                                     <td class="px-2 py-1">${row['NAMA LENGKAP'] || '-'}</td>
                                     <td class="px-2 py-1">${formatExcelDate(row.TANGGAL)}</td>
-                                    <td class="px-2 py-1">${row['JAM LEMBUR']}</td>
-                                    <td class="px-2 py-1">${row['JENIS LEMBUR']}</td>
+                                    <td class="px-2 py-1">${row['JAM LEMBUR'] || row['JAM LEMBUR '] || '0 Jam'}</td>
+                                    <td class="px-2 py-1">${row['JENIS LEMBUR'] || 'Hari Kerja'}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -159,10 +340,18 @@ function detectDuplicates(newData) {
     const newRecords = [];
     
     newData.forEach(row => {
+        const nik = String(row.NIK || '').trim();
+        const tanggal = formatExcelDate(row.TANGGAL);
+        const jamLembur = row['JAM LEMBUR'] || row['JAM LEMBUR '] || '0 Jam';
+        
+        if (!nik || !tanggal) {
+            return; // Skip invalid rows
+        }
+        
         const isDuplicate = allLembur.some(existing => {
-            return existing.nik === String(row.NIK) && 
-                   existing.tanggal === formatExcelDate(row.TANGGAL) &&
-                   existing.jamLembur === row['JAM LEMBUR'];
+            return existing.nik === nik && 
+                   existing.tanggal === tanggal &&
+                   existing.jamLembur === jamLembur;
         });
         
         if (isDuplicate) {
@@ -176,7 +365,17 @@ function detectDuplicates(newData) {
 }
 
 function formatExcelDate(excelDate) {
-    // Excel date serial number to JS date
+    if (!excelDate) return '';
+    
+    // If already a Date object or string in YYYY-MM-DD format
+    if (excelDate instanceof Date) {
+        const year = excelDate.getFullYear();
+        const month = String(excelDate.getMonth() + 1).padStart(2, '0');
+        const day = String(excelDate.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    // If Excel date serial number
     if (typeof excelDate === 'number') {
         const date = new Date((excelDate - 25569) * 86400 * 1000);
         const year = date.getFullYear();
@@ -185,21 +384,23 @@ function formatExcelDate(excelDate) {
         return `${year}-${month}-${day}`;
     }
     
-    // If already string in format YYYY-MM-DD or DD/MM/YYYY
-    if (typeof excelDate === 'string') {
-        if (excelDate.includes('/')) {
-            const parts = excelDate.split('/');
-            if (parts.length === 3) {
-                const day = parts[0].padStart(2, '0');
-                const month = parts[1].padStart(2, '0');
-                const year = parts[2];
-                return `${year}-${month}-${day}`;
-            }
+    // If string in format DD/MM/YYYY
+    if (typeof excelDate === 'string' && excelDate.includes('/')) {
+        const parts = excelDate.split('/');
+        if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            return `${year}-${month}-${day}`;
         }
+    }
+    
+    // If string already in YYYY-MM-DD format
+    if (typeof excelDate === 'string' && excelDate.includes('-')) {
         return excelDate;
     }
     
-    return excelDate;
+    return String(excelDate);
 }
 
 async function importData() {
@@ -215,12 +416,12 @@ async function importData() {
         const processedData = window.pendingImportData.map((row, index) => ({
             no: String(allLembur.length + index + 1),
             tanggal: formatExcelDate(row.TANGGAL),
-            nik: String(row.NIK),
+            nik: String(row.NIK || '').trim(),
             nama: row['NAMA LENGKAP'] || row['NAMA'] || '',
             departemen: row.DEPARTEMEN || 'LABORATORIUM',
             jabatan: row.JABATAN || '',
             jenisLembur: row['JENIS LEMBUR'] || 'Hari Kerja',
-            jamLembur: row['JAM LEMBUR'] || '0 Jam',
+            jamLembur: row['JAM LEMBUR'] || row['JAM LEMBUR '] || '0 Jam',
             insentifKopi: row['INSENTIF KOPI'] || 'Tidak',
             keterangan: row.KETERANGAN || '',
             pengecekan: row.PENGECEKAN || 'Import'
@@ -324,7 +525,7 @@ async function saveCutOff(event) {
     
     // If set as active, deactivate others
     if (status === 'Aktif') {
-        allCutOff.forEach((c, i) => {
+        allCutOff.forEach((c) => {
             if (c !== newCutOff) {
                 c.status = '';
             }
@@ -376,6 +577,44 @@ function setActiveCutOff(index) {
     renderCutOffTab();
     renderOverviewTab();
     renderLemburTab();
+}
+
+// Update renderCutOffTab to include action buttons
+function renderCutOffTab() {
+    const tbody = document.getElementById('cutoffTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = allCutOff.map((c, index) => `
+        <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 text-sm font-medium">${c.bulan}</td>
+            <td class="px-4 py-3 text-sm">${formatDate(c.tanggalMulai)}</td>
+            <td class="px-4 py-3 text-sm">${formatDate(c.tanggalAkhir)}</td>
+            <td class="px-4 py-3 text-sm">
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                    c.status === 'Aktif' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                }">
+                    ${c.status || '-'}
+                </span>
+            </td>
+            <td class="px-4 py-3 text-sm">
+                <div class="flex space-x-2">
+                    ${c.status !== 'Aktif' ? `
+                        <button onclick="setActiveCutOff(${index})" class="text-green-600 hover:text-green-800 font-medium text-xs px-2 py-1 rounded hover:bg-green-50">
+                            Set Aktif
+                        </button>
+                    ` : ''}
+                    <button onclick="showCutOffModal(true, allCutOff[${index}])" class="text-indigo-600 hover:text-indigo-800 font-medium text-xs px-2 py-1 rounded hover:bg-indigo-50">
+                        Edit
+                    </button>
+                    <button onclick="deleteCutOff(${index})" class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded hover:bg-red-50">
+                        Hapus
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
 }
 
 // ============================================
@@ -569,4 +808,61 @@ async function exportAllLemburPDF() {
         hideLoading();
         showAlert('✅ PDF berhasil diexport!', 'success');
     }, 100);
+}
+
+// Export CSV untuk lembur (existing function improvement)
+function exportLemburToCSV() {
+    const periodLembur = filterLemburByPeriod(allLembur, activeCutOff);
+    
+    if (periodLembur.length === 0) {
+        showAlert('Tidak ada data untuk diexport', 'warning');
+        return;
+    }
+    
+    // Prepare CSV data with calculated insentif
+    const csvData = periodLembur.map((l, index) => {
+        const karyawan = allKaryawan.find(k => k.nik === l.nik);
+        const level = karyawan ? karyawan.level : 'staff';
+        const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, level);
+        
+        return {
+            'No': index + 1,
+            'Tanggal': formatDate(l.tanggal),
+            'NIK': l.nik,
+            'Nama': l.nama,
+            'Departemen': l.departemen,
+            'Jabatan': l.jabatan,
+            'Jenis Lembur': l.jenisLembur,
+            'Jam Lembur': l.jamLembur,
+            'Insentif': insentif,
+            'Insentif Kopi': l.insentifKopi,
+            'Keterangan': l.keterangan,
+            'Pengecekan': l.pengecekan
+        };
+    });
+    
+    // Convert to CSV
+    const headers = Object.keys(csvData[0]);
+    let csv = headers.join(',') + '\n';
+    
+    csvData.forEach(row => {
+        const values = headers.map(header => {
+            const value = row[header];
+            return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+        });
+        csv += values.join(',') + '\n';
+    });
+    
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Laporan_Lembur_${activeCutOff ? activeCutOff.bulan.replace(/\s/g, '_') : 'All'}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showAlert('✅ CSV berhasil diexport!', 'success');
 }
