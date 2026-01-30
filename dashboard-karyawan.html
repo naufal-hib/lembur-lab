@@ -8,152 +8,143 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-indigo-600 w-10 h-10 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <h1 class="text-xl font-bold text-gray-800">Dashboard Lembur</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="text-right hidden sm:block">
-                        <p class="text-sm font-semibold text-gray-800" id="userName"></p>
-                        <p class="text-xs text-gray-600" id="userNIK"></p>
-                    </div>
-                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition">
-                        Logout
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mx-auto px-4 py-8">
-        <!-- Alert Messages -->
-        <div id="alert" class="hidden mb-6"></div>
-
-        <!-- Period Info -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="flex items-center justify-between">
+<body class="bg-gray-100">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-800 mb-1">Periode Cut-Off Aktif</h2>
-                    <p class="text-2xl font-bold text-indigo-600" id="activePeriod">-</p>
+                    <h1 class="text-2xl font-bold text-gray-800">Dashboard Lembur</h1>
+                    <p class="text-sm text-gray-600">Selamat datang, <span id="userName" class="font-semibold"></span></p>
                 </div>
-                <div class="bg-indigo-50 p-4 rounded-lg">
-                    <svg class="w-12 h-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
+                <button onclick="logout()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6 flex-grow">
+            <!-- Active Period -->
+            <div class="bg-white rounded-xl shadow p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Periode Cut-Off Aktif</p>
+                        <p id="activePeriod" class="text-lg font-semibold text-gray-800">-</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">NIK</p>
+                        <p id="userNIK" class="text-lg font-semibold text-gray-800">-</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <!-- Total Jam Lembur -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-medium text-gray-600">Total Jam Lembur</h3>
-                    <div class="bg-blue-50 p-3 rounded-lg">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-blue-100 text-sm font-medium">Total Jam Lembur</p>
+                            <p id="totalHours" class="text-4xl font-bold mt-1">0</p>
+                            <p class="text-blue-100 text-sm mt-1">Jam dalam periode ini</p>
+                        </div>
+                        <svg class="w-16 h-16 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
-                <p class="text-4xl font-bold text-gray-800" id="totalHours">0</p>
-                <p class="text-sm text-gray-500 mt-2">Jam dalam periode ini</p>
-            </div>
 
-            <!-- Total Insentif -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-medium text-gray-600">Total Insentif</h3>
-                    <div class="bg-green-50 p-3 rounded-lg">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-green-100 text-sm font-medium">Total Insentif</p>
+                            <p id="totalInsentif" class="text-4xl font-bold mt-1">Rp 0</p>
+                            <p class="text-green-100 text-sm mt-1">Total dalam periode ini</p>
+                        </div>
+                        <svg class="w-16 h-16 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
-                <p class="text-4xl font-bold text-gray-800" id="totalInsentif">Rp 0</p>
-                <p class="text-sm text-gray-500 mt-2">Total dalam periode ini</p>
-            </div>
-        </div>
-
-        <!-- Chart & Calendar -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- Chart -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Grafik Jam Lembur Mingguan</h3>
-                <canvas id="overtimeChart"></canvas>
             </div>
 
-            <!-- Calendar View -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Kalender Lembur</h3>
-                    <div class="flex space-x-2">
-                        <button onclick="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-lg">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                        </button>
-                        <button onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-lg">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </button>
+            <!-- Charts & Calendar -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Weekly Overtime Chart -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <h3 class="text-lg font-semibold mb-4">Grafik Jam Lembur Mingguan</h3>
+                    <div class="h-64">
+                        <canvas id="overtimeChart"></canvas>
                     </div>
                 </div>
-                <p class="text-center text-lg font-semibold text-gray-700 mb-4" id="calendarMonth"></p>
-                <div id="calendar" class="grid grid-cols-7 gap-1 text-center"></div>
-            </div>
-        </div>
 
-        <!-- Riwayat Lembur -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Riwayat Lembur</h3>
-                <button onclick="downloadReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                    </svg>
-                    <span>Download</span>
-                </button>
+                <!-- Calendar -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <h3 class="text-lg font-semibold mb-4">Kalender Lembur</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <button onclick="changeMonth(-1)" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-lg transition">
+                            &laquo;
+                        </button>
+                        <h4 id="calendarMonth" class="text-lg font-semibold"></h4>
+                        <button onclick="changeMonth(1)" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-lg transition">
+                            &raquo;
+                        </button>
+                    </div>
+                    <div id="calendar" class="grid grid-cols-7 gap-1 text-center"></div>
+                </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jam</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Insentif</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTable" class="divide-y divide-gray-200"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 
-    <!-- Loading Spinner -->
-    <div id="loading" style="display: none; position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 999999;">
-        <div style="background-color: white; border-radius: 0.5rem; padding: 2rem; display: flex; flex-direction: column; align-items: center;">
-            <div class="animate-spin" style="border-radius: 50%; height: 4rem; width: 4rem; border-top: 4px solid #4f46e5; border-bottom: 4px solid #4f46e5; margin-bottom: 1rem;"></div>
-            <p style="color: #374151; font-weight: 500;">Memuat data...</p>
+            <!-- History Table -->
+            <div class="bg-white rounded-xl shadow p-4 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">Riwayat Lembur</h3>
+                    <button onclick="downloadReport()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        <span>Download</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tanggal</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Jenis</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Jam</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Insentif</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTable" class="divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                    <p class="text-lg font-medium">Memuat data...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination Controls -->
+                <div id="paginationControls" class="mt-4"></div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-lg p-6">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                <p class="mt-4 text-gray-700">Memuat data...</p>
+            </div>
         </div>
     </div>
 
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script>
-        window.addEventListener('DOMContentLoaded', initKaryawanDashboard);
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', initKaryawanDashboard);
     </script>
 </body>
 </html>
