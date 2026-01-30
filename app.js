@@ -12,11 +12,17 @@ let activeCutOff = null;
 // ============================================
 
 function showLoading() {
-    document.getElementById('loading').classList.remove('hidden');
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.style.display = 'flex';
+    }
 }
 
 function hideLoading() {
-    document.getElementById('loading').classList.add('hidden');
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.style.display = 'none';
+    }
 }
 
 function showAlert(message, type = 'info') {
