@@ -5,212 +5,355 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - Sistem Lembur</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-100">
-    <!-- Header -->
-    <nav class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold">Dashboard Administrator</h1>
-                    <p class="text-sm opacity-90">Sistem Manajemen Lembur Karyawan</p>
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Dashboard Administrator</h1>
+                        <p class="text-sm text-gray-600">Sistem Manajemen Lembur Karyawan</p>
+                    </div>
+                    <button onclick="logout()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                        Logout
+                    </button>
                 </div>
-                <button onclick="logout()" class="bg-white text-indigo-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition font-medium">
-                    Logout
-                </button>
             </div>
-        </div>
-    </nav>
+        </header>
 
-    <!-- Tab Navigation -->
-    <div class="container mx-auto px-4 mt-6">
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="flex border-b overflow-x-auto">
-                <button onclick="switchTab('overview')" class="tab-button px-6 py-4 font-medium text-indigo-600 border-b-2 border-indigo-600 whitespace-nowrap">
-                    📊 Overview
-                </button>
-                <button onclick="switchTab('karyawan')" class="tab-button px-6 py-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-indigo-600 hover:bg-gray-50 whitespace-nowrap">
-                    👥 Data Karyawan
-                </button>
-                <button onclick="switchTab('lembur')" class="tab-button px-6 py-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-indigo-600 hover:bg-gray-50 whitespace-nowrap">
-                    ⏰ Data Lembur
-                </button>
-                <button onclick="switchTab('cutoff')" class="tab-button px-6 py-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-indigo-600 hover:bg-gray-50 whitespace-nowrap">
-                    📅 Cut-Off Period
-                </button>
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6 flex-grow">
+            <!-- Tabs -->
+            <div class="mb-6">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8">
+                        <button onclick="switchTab('overview')" class="tab-button py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            📊 Overview
+                        </button>
+                        <button onclick="switchTab('karyawan')" class="tab-button py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            👥 Data Karyawan
+                        </button>
+                        <button onclick="switchTab('lembur')" class="tab-button py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            ⏰ Data Lembur
+                        </button>
+                        <button onclick="switchTab('cutoff')" class="tab-button py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            📅 Cut-Off Period
+                        </button>
+                    </nav>
+                </div>
             </div>
 
-            <!-- Alert Messages -->
-            <div id="alert" class="hidden m-6"></div>
-
+            <!-- Tab Contents -->
             <!-- Overview Tab -->
-            <div id="overview-tab" class="tab-content p-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Overview Statistik</h2>
-                
-                <!-- Active Period -->
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-lg">
-                    <p class="font-semibold text-blue-800">Periode Aktif:</p>
-                    <p id="activePeriodAdmin" class="text-lg text-indigo-600 font-bold mt-1">Loading...</p>
-                </div>
-
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm opacity-90">Total Karyawan</p>
-                                <p id="totalKaryawan" class="text-3xl font-bold mt-2">0</p>
-                            </div>
-                            <svg class="w-12 h-12 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
+            <div id="overview-tab" class="tab-content">
+                <div class="bg-white rounded-xl shadow p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Overview Statistik</h3>
+                        <p class="text-sm text-gray-600">
+                            Periode Aktif: <span id="activePeriodAdmin" class="font-semibold">Loading...</span>
+                        </p>
                     </div>
-
-                    <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm opacity-90">Total Records</p>
-                                <p id="totalRecords" class="text-3xl font-bold mt-2">0</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-blue-50 p-6 rounded-lg shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-600 text-sm font-medium">Total Karyawan</p>
+                                    <p id="totalKaryawan" class="text-3xl font-bold text-gray-800 mt-1">0</p>
+                                </div>
+                                <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
                             </div>
-                            <svg class="w-12 h-12 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
                         </div>
-                    </div>
 
-                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg shadow-lg p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm opacity-90">Total Jam</p>
-                                <p id="totalJam" class="text-3xl font-bold mt-2">0</p>
+                        <div class="bg-purple-50 p-6 rounded-lg shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-purple-600 text-sm font-medium">Total Records</p>
+                                    <p id="totalRecords" class="text-3xl font-bold text-gray-800 mt-1">0</p>
+                                </div>
+                                <svg class="w-12 h-12 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
                             </div>
-                            <svg class="w-12 h-12 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
                         </div>
-                    </div>
 
-                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg shadow-lg p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm opacity-90">Total Insentif</p>
-                                <p id="totalInsentifAdmin" class="text-3xl font-bold mt-2">Rp 0</p>
+                        <div class="bg-orange-50 p-6 rounded-lg shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-orange-600 text-sm font-medium">Total Jam</p>
+                                    <p id="totalJam" class="text-3xl font-bold text-gray-800 mt-1">0</p>
+                                </div>
+                                <svg class="w-12 h-12 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
                             </div>
-                            <svg class="w-12 h-12 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
+                        </div>
+
+                        <div class="bg-green-50 p-6 rounded-lg shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-green-600 text-sm font-medium">Total Insentif</p>
+                                    <p id="totalInsentifAdmin" class="text-3xl font-bold text-gray-800 mt-1">Rp 0</p>
+                                </div>
+                                <svg class="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Karyawan Tab -->
-            <div id="karyawan-tab" class="tab-content hidden p-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Data Karyawan</h2>
-                
-                <!-- Search -->
-                <div class="mb-6">
-                    <input 
-                        type="text" 
-                        id="searchKaryawan" 
-                        placeholder="Cari NIK atau Nama..." 
-                        class="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    />
-                </div>
-
-                <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full bg-white rounded-lg overflow-hidden">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">NIK</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jabatan</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Level</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Password</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="karyawanTable" class="divide-y divide-gray-200"></tbody>
-                    </table>
+            <div id="karyawan-tab" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">Data Karyawan</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">NIK</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Nama</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Jabatan</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Level</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Password</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="karyawanTable" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                                        <p class="text-lg font-medium">Memuat data...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
             <!-- Lembur Tab -->
-            <div id="lembur-tab" class="tab-content hidden p-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <h2 class="text-2xl font-bold text-gray-800">Data Lembur</h2>
-                    <button onclick="exportToExcel()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition flex items-center space-x-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <span>Export CSV</span>
-                    </button>
-                </div>
-
-                <!-- Stats -->
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-lg">
-                    <p class="text-sm text-blue-800">Menampilkan <strong id="recordCount">0</strong> records untuk periode aktif</p>
-                </div>
-
-                <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full bg-white rounded-lg overflow-hidden text-sm">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">NIK</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jabatan</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jam</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Insentif</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lemburTable" class="divide-y divide-gray-200"></tbody>
-                    </table>
+            <div id="lembur-tab" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Data Lembur</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="exportLemburToCSV()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                <span>Export CSV</span>
+                            </button>
+                            <button onclick="showImportModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <span>Import Excel</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Rekapan Total -->
+                    <div id="lemburRecap" class="mb-6"></div>
+                    
+                    <p class="text-sm text-gray-600 mb-4">
+                        Menampilkan <span id="recordCount">0</span> records untuk periode aktif
+                    </p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">No</th>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">Tanggal</th>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">NIK</th>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">Nama</th>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">Jabatan</th>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">Jenis</th>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">Jam</th>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">Insentif</th>
+                                    <th class="px-3 py-3 text-left text-sm font-medium text-gray-600">Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lemburTable" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="9" class="px-3 py-8 text-center text-gray-500">
+                                        <p class="text-lg font-medium">Memuat data...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- Cut-Off Tab -->
-            <div id="cutoff-tab" class="tab-content hidden p-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Cut-Off Period</h2>
+            <!-- CutOff Tab -->
+            <div id="cutoff-tab" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Cut-Off Period</h3>
+                        <button onclick="showCutOffModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <span>Tambah Periode</span>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Bulan</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tanggal Mulai</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tanggal Akhir</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Status</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cutoffTable" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                        <p class="text-lg font-medium">Memuat data...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
 
-                <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full bg-white rounded-lg overflow-hidden">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bulan</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Mulai</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Akhir</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cutoffTable" class="divide-y divide-gray-200"></tbody>
-                    </table>
+        <!-- Loading Overlay -->
+        <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-lg p-6">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                <p class="mt-4 text-gray-700">Memuat data...</p>
+            </div>
+        </div>
+
+        <!-- Employee Detail Modal -->
+        <div id="employeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">Detail Karyawan</h3>
+                        <button onclick="closeEmployeeModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="employeeModalContent"></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Loading Spinner -->
-    <div id="loading" style="display: none; position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 999999;">
-        <div style="background-color: white; border-radius: 0.5rem; padding: 2rem; display: flex; flex-direction: column; align-items: center;">
-            <div class="animate-spin" style="border-radius: 50%; height: 4rem; width: 4rem; border-top: 4px solid #4f46e5; border-bottom: 4px solid #4f46e5; margin-bottom: 1rem;"></div>
-            <p style="color: #374151; font-weight: 500;">Memuat data...</p>
+        <!-- Import Excel Modal -->
+        <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">Import Data Lembur</h3>
+                        <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <p class="text-sm text-gray-600 mb-2">Pilih file Excel (.xlsx) untuk diimport</p>
+                            <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event)">
+                            <button onclick="document.getElementById('excelFileInput').click()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+                                Pilih File
+                            </button>
+                        </div>
+                        
+                        <div id="importPreview"></div>
+                        
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button onclick="closeImportModal()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition">
+                                Batal
+                            </button>
+                            <button id="importBtn" onclick="importData()" disabled class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                Import Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cut-Off Modal -->
+        <div id="cutoffModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 id="cutoffModalTitle" class="text-xl font-bold text-gray-800">Tambah Periode Cut-Off</h3>
+                        <button onclick="closeCutOffModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="cutoffForm" onsubmit="saveCutOff(event)">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Bulan</label>
+                                <input type="text" id="cutoffBulan" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                                <input type="date" id="cutoffStart" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Akhir</label>
+                                <input type="date" id="cutoffEnd" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select id="cutoffStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Non-Aktif</option>
+                                    <option value="Aktif">Aktif</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 pt-4 border-t">
+                                <button type="button" onclick="closeCutOffModal()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition">
+                                    Batal
+                                </button>
+                                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+                                    Simpan
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="config.js"></script>
     <script src="app.js"></script>
+    <script src="admin-features.js"></script>
     <script>
-        window.addEventListener('DOMContentLoaded', initAdminDashboard);
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', initAdminDashboard);
     </script>
 </body>
 </html>
