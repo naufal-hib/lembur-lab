@@ -1,12 +1,10 @@
 // ============================================
 // ADMIN FEATURES - FIXED VERSION
-// Tidak overwrite fungsi existing di app.js
 // ============================================
 
 // ============================================
 // MODAL EMPLOYEE DETAIL (NEW)
 // ============================================
-
 function viewKaryawanDetail(nik) {
     const karyawan = allKaryawan.find(k => k.nik === nik);
     if (!karyawan) {
@@ -40,19 +38,19 @@ function viewKaryawanDetail(nik) {
             <!-- Profil Karyawan -->
             <div class="bg-gray-50 rounded-lg p-4">
                 <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
-                    Profil
+                    Profil Karyawan
                 </h4>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <p class="text-sm text-gray-600">NIK</p>
-                        <p class="font-semibold text-gray-800">${karyawan.nik}</p>
+                        <p class="font-semibold text-gray-800 text-lg">${karyawan.nik}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Nama Lengkap</p>
-                        <p class="font-semibold text-gray-800">${karyawan.nama}</p>
+                        <p class="font-semibold text-gray-800 text-lg">${karyawan.nama}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Jabatan</p>
@@ -68,58 +66,58 @@ function viewKaryawanDetail(nik) {
                             ${karyawan.level}
                         </span>
                     </div>
-                    <div>
+                    <div class="md:col-span-2">
                         <p class="text-sm text-gray-600">Password</p>
-                        <code class="bg-gray-200 px-2 py-1 rounded text-sm">${karyawan.password}</code>
+                        <code class="bg-gray-200 px-3 py-1 rounded text-sm font-mono">${karyawan.password}</code>
                     </div>
                 </div>
             </div>
 
-            <!-- Stats Periode Aktif -->
+            <!-- Statistik Periode -->
             <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-indigo-200">
                 <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                     Statistik Periode ${activeCutOff ? activeCutOff.bulan : 'Aktif'}
                 </h4>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="text-center">
+                    <div class="text-center bg-white p-3 rounded-lg shadow">
                         <p class="text-3xl font-bold text-indigo-600">${totalJam}</p>
                         <p class="text-sm text-gray-600 mt-1">Total Jam</p>
                     </div>
-                    <div class="text-center">
+                    <div class="text-center bg-white p-3 rounded-lg shadow">
                         <p class="text-2xl font-bold text-green-600">${formatCurrency(totalInsentif)}</p>
                         <p class="text-sm text-gray-600 mt-1">Total Insentif</p>
                     </div>
-                    <div class="text-center">
+                    <div class="text-center bg-white p-3 rounded-lg shadow">
                         <p class="text-3xl font-bold text-blue-600">${totalHariKerja}</p>
                         <p class="text-sm text-gray-600 mt-1">Hari Kerja</p>
                     </div>
-                    <div class="text-center">
+                    <div class="text-center bg-white p-3 rounded-lg shadow">
                         <p class="text-3xl font-bold text-red-600">${totalHariLibur}</p>
                         <p class="text-sm text-gray-600 mt-1">Hari Libur</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Riwayat Lembur Recent -->
+            <!-- Riwayat Lembur -->
             <div>
                 <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     Riwayat Lembur Terbaru
                 </h4>
                 ${periodLembur.length > 0 ? `
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-100">
                                 <tr>
-                                    <th class="px-3 py-2 text-left">Tanggal</th>
-                                    <th class="px-3 py-2 text-left">Jenis</th>
-                                    <th class="px-3 py-2 text-left">Jam</th>
-                                    <th class="px-3 py-2 text-left">Insentif</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-600">Tanggal</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-600">Jenis</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-600">Jam</th>
+                                    <th class="px-4 py-3 text-left font-medium text-gray-600">Insentif</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
@@ -127,8 +125,8 @@ function viewKaryawanDetail(nik) {
                                     const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
                                     return `
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-3 py-2">${formatDate(l.tanggal)}</td>
-                                            <td class="px-3 py-2">
+                                            <td class="px-4 py-3">${formatDate(l.tanggal)}</td>
+                                            <td class="px-4 py-3">
                                                 <span class="px-2 py-1 rounded-full text-xs font-medium ${
                                                     l.jenisLembur.toLowerCase().includes('libur') 
                                                         ? 'bg-red-100 text-red-800' 
@@ -137,17 +135,17 @@ function viewKaryawanDetail(nik) {
                                                     ${l.jenisLembur}
                                                 </span>
                                             </td>
-                                            <td class="px-3 py-2 font-semibold">${l.jamLembur}</td>
-                                            <td class="px-3 py-2 font-semibold text-green-600">${formatCurrency(insentif)}</td>
+                                            <td class="px-4 py-3 font-semibold">${l.jamLembur}</td>
+                                            <td class="px-4 py-3 font-semibold text-green-600">${formatCurrency(insentif)}</td>
                                         </tr>
                                     `;
                                 }).join('')}
                             </tbody>
                         </table>
                         ${periodLembur.length > 10 ? `
-                            <p class="text-sm text-gray-500 text-center mt-3">
+                            <div class="p-4 text-center text-gray-500 text-sm">
                                 Menampilkan 10 dari ${periodLembur.length} records
-                            </p>
+                            </div>
                         ` : ''}
                     </div>
                 ` : `
@@ -162,19 +160,19 @@ function viewKaryawanDetail(nik) {
 
             <!-- Action Buttons -->
             <div class="flex justify-end space-x-3 pt-4 border-t">
-                <button onclick="exportKaryawanPDF('${nik}')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center space-x-2">
+                <button onclick="exportKaryawanPDF('${nik}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
                     <span>Export PDF</span>
                 </button>
-                <button onclick="closeEmployeeModal()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition">
+                <button onclick="closeEmployeeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition">
                     Tutup
                 </button>
             </div>
         </div>
     `;
-    
+
     document.getElementById('employeeModal').style.display = 'flex';
 }
 
@@ -188,7 +186,6 @@ function closeEmployeeModal() {
 // ============================================
 // IMPORT EXCEL FEATURE (NEW)
 // ============================================
-
 function showImportModal() {
     const modal = document.getElementById('importModal');
     if (modal) {
@@ -212,9 +209,8 @@ function closeImportModal() {
 async function handleExcelUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
     showLoading();
-    
+
     try {
         const data = await readExcelFile(file);
         console.log('Excel data loaded:', data.length, 'rows');
@@ -234,7 +230,6 @@ async function handleExcelUpload(event) {
 async function readExcelFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        
         reader.onload = function(e) {
             try {
                 const data = new Uint8Array(e.target.result);
@@ -276,17 +271,13 @@ async function readExcelFile(file) {
 
 function displayImportPreview(data) {
     const preview = document.getElementById('importPreview');
-    
     if (!data || data.length === 0) {
         preview.innerHTML = '<p class="text-red-600">Tidak ada data yang ditemukan dalam file Excel</p>';
         document.getElementById('importBtn').disabled = true;
         return;
     }
-    
+
     const { duplicates, newRecords } = detectDuplicates(data);
-    
-    console.log('Duplicates:', duplicates.length);
-    console.log('New records:', newRecords.length);
     
     preview.innerHTML = `
         <div class="space-y-4">
@@ -350,7 +341,7 @@ function displayImportPreview(data) {
             </div>
         </div>
     `;
-    
+
     window.pendingImportData = newRecords;
 }
 
@@ -379,20 +370,19 @@ function detectDuplicates(newData) {
             newRecords.push(row);
         }
     });
-    
+
     return { duplicates, newRecords };
 }
 
 function formatExcelDate(excelDate) {
     if (!excelDate) return '';
-    
     if (excelDate instanceof Date) {
         const year = excelDate.getFullYear();
         const month = String(excelDate.getMonth() + 1).padStart(2, '0');
         const day = String(excelDate.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
-    
+
     if (typeof excelDate === 'number') {
         const date = new Date((excelDate - 25569) * 86400 * 1000);
         const year = date.getFullYear();
@@ -400,7 +390,7 @@ function formatExcelDate(excelDate) {
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
-    
+
     if (typeof excelDate === 'string' && excelDate.includes('/')) {
         const parts = excelDate.split('/');
         if (parts.length === 3) {
@@ -410,26 +400,25 @@ function formatExcelDate(excelDate) {
             return `${year}-${month}-${day}`;
         }
     }
-    
+
     if (typeof excelDate === 'string' && excelDate.includes('-')) {
         return excelDate;
     }
-    
+
     return String(excelDate);
 }
 
 async function importData() {
     console.log('importData() called');
-    
     if (!window.pendingImportData || window.pendingImportData.length === 0) {
         showAlert('Tidak ada data untuk diimport', 'warning');
         return;
     }
-    
+
     console.log('Processing', window.pendingImportData.length, 'records');
-    
+
     showLoading();
-    
+
     try {
         const processedData = window.pendingImportData.map((row, index) => {
             const nik = String(row.NIK || row.nik || '').trim();
@@ -497,7 +486,6 @@ async function importData() {
 // ============================================
 // MANAGE CUT-OFF PERIOD (NEW)
 // ============================================
-
 function showCutOffModal(edit = false, cutoff = null) {
     const modal = document.getElementById('cutoffModal');
     const modalTitle = document.getElementById('cutoffModalTitle');
@@ -533,37 +521,36 @@ function closeCutOffModal() {
 
 async function saveCutOff(event) {
     event.preventDefault();
-    
     const form = event.target;
     const bulan = document.getElementById('cutoffBulan').value;
     const tanggalMulai = document.getElementById('cutoffStart').value;
     const tanggalAkhir = document.getElementById('cutoffEnd').value;
     const status = document.getElementById('cutoffStatus').value;
-    
+
     if (!bulan || !tanggalMulai || !tanggalAkhir) {
         showAlert('Semua field harus diisi!', 'error');
         return;
     }
-    
+
     if (new Date(tanggalMulai) >= new Date(tanggalAkhir)) {
         showAlert('Tanggal akhir harus lebih besar dari tanggal mulai!', 'error');
         return;
     }
-    
+
     const newCutOff = {
         bulan,
         tanggalMulai,
         tanggalAkhir,
         status
     };
-    
+
     if (form.dataset.editIndex !== undefined) {
         const index = parseInt(form.dataset.editIndex);
         allCutOff[index] = newCutOff;
     } else {
         allCutOff.push(newCutOff);
     }
-    
+
     if (status === 'Aktif') {
         allCutOff.forEach((c) => {
             if (c !== newCutOff) {
@@ -572,12 +559,12 @@ async function saveCutOff(event) {
         });
         activeCutOff = newCutOff;
     }
-    
+
     saveToLocalStorage('cutoff', allCutOff);
-    
+
     showAlert('✅ Periode cut-off berhasil disimpan!', 'success');
     closeCutOffModal();
-    
+
     // Refresh display
     if (typeof renderCutOffTab === 'function') {
         renderCutOffTab();
@@ -585,7 +572,7 @@ async function saveCutOff(event) {
     if (typeof renderOverviewTab === 'function') {
         renderOverviewTab();
     }
-    
+
     setTimeout(() => {
         showAlert('⚠️ PENTING: Update juga di Google Sheets agar data permanen!', 'warning');
     }, 2000);
@@ -593,14 +580,13 @@ async function saveCutOff(event) {
 
 function deleteCutOff(index) {
     if (!confirm('Hapus periode cut-off ini?')) return;
-    
     allCutOff.splice(index, 1);
     saveToLocalStorage('cutoff', allCutOff);
-    
+
     activeCutOff = allCutOff.find(c => c.status === 'Aktif');
-    
+
     showAlert('✅ Periode cut-off berhasil dihapus!', 'success');
-    
+
     if (typeof renderCutOffTab === 'function') {
         renderCutOffTab();
     }
@@ -611,14 +597,13 @@ function deleteCutOff(index) {
 
 function setActiveCutOff(index) {
     allCutOff.forEach(c => c.status = '');
-    
     allCutOff[index].status = 'Aktif';
     activeCutOff = allCutOff[index];
-    
+
     saveToLocalStorage('cutoff', allCutOff);
-    
+
     showAlert('✅ Periode cut-off aktif berhasil diubah!', 'success');
-    
+
     if (typeof renderCutOffTab === 'function') {
         renderCutOffTab();
     }
@@ -635,7 +620,6 @@ const originalRenderCutOffTab = window.renderCutOffTab;
 window.renderCutOffTab = function() {
     const tbody = document.getElementById('cutoffTable');
     if (!tbody) return;
-    
     tbody.innerHTML = allCutOff.map((c, index) => `
         <tr class="hover:bg-gray-50">
             <td class="px-4 py-3 text-sm font-medium">${c.bulan}</td>
@@ -672,7 +656,6 @@ window.renderCutOffTab = function() {
 // ============================================
 // EXPORT PDF (NEW)
 // ============================================
-
 async function exportKaryawanPDF(nik) {
     const karyawan = allKaryawan.find(k => k.nik === nik);
     if (!karyawan) {
@@ -682,49 +665,49 @@ async function exportKaryawanPDF(nik) {
     
     const lemburData = allLembur.filter(l => l.nik === nik);
     const periodLembur = filterLemburByPeriod(lemburData, activeCutOff);
-    
+
     let totalJam = 0;
     let totalInsentif = 0;
-    
+
     periodLembur.forEach(l => {
         totalJam += parseJamLembur(l.jamLembur);
         totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
     });
-    
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
+
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.text('LAPORAN LEMBUR KARYAWAN', 105, 20, { align: 'center' });
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     if (activeCutOff) {
         doc.text(`Periode: ${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`, 105, 28, { align: 'center' });
     }
-    
+
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('INFORMASI KARYAWAN', 20, 40);
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`NIK: ${karyawan.nik}`, 20, 48);
     doc.text(`Nama: ${karyawan.nama}`, 20, 55);
     doc.text(`Jabatan: ${karyawan.jabatan}`, 20, 62);
     doc.text(`Level: ${karyawan.level}`, 20, 69);
-    
+
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('RINGKASAN', 20, 82);
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Total Jam Lembur: ${totalJam} jam`, 20, 90);
     doc.text(`Total Insentif: ${formatCurrency(totalInsentif)}`, 20, 97);
     doc.text(`Jumlah Hari Lembur: ${periodLembur.length} hari`, 20, 104);
-    
+
     if (periodLembur.length > 0) {
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
@@ -747,7 +730,7 @@ async function exportKaryawanPDF(nik) {
             headStyles: { fillColor: [79, 70, 229], textColor: 255 }
         });
     }
-    
+
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -756,20 +739,19 @@ async function exportKaryawanPDF(nik) {
         doc.text(`Halaman ${i} dari ${pageCount}`, 105, 290, { align: 'center' });
         doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 20, 290);
     }
-    
+
     doc.save(`Laporan_Lembur_${karyawan.nik}_${karyawan.nama.replace(/\s/g, '_')}.pdf`);
 }
 
 async function exportAllLemburPDF() {
     const periodLembur = filterLemburByPeriod(allLembur, activeCutOff);
-    
     if (periodLembur.length === 0) {
         showAlert('Tidak ada data untuk diexport', 'warning');
         return;
     }
-    
+
     showLoading();
-    
+
     setTimeout(() => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape');
@@ -845,12 +827,11 @@ async function exportAllLemburPDF() {
 
 function exportLemburToCSV() {
     const periodLembur = filterLemburByPeriod(allLembur, activeCutOff);
-    
     if (periodLembur.length === 0) {
         showAlert('Tidak ada data untuk diexport', 'warning');
         return;
     }
-    
+
     const csvData = periodLembur.map((l, index) => {
         const karyawan = allKaryawan.find(k => k.nik === l.nik);
         const level = karyawan ? karyawan.level : 'staff';
@@ -871,10 +852,10 @@ function exportLemburToCSV() {
             'Pengecekan': l.pengecekan
         };
     });
-    
+
     const headers = Object.keys(csvData[0]);
     let csv = headers.join(',') + '\n';
-    
+
     csvData.forEach(row => {
         const values = headers.map(header => {
             const value = row[header];
@@ -882,7 +863,7 @@ function exportLemburToCSV() {
         });
         csv += values.join(',') + '\n';
     });
-    
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -892,7 +873,7 @@ function exportLemburToCSV() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-    
+
     showAlert('✅ CSV berhasil diexport!', 'success');
 }
 
