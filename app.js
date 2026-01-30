@@ -384,11 +384,16 @@ async function initKaryawanDashboard() {
 }
 
 function renderKaryawanDashboard() {
-    console.log('🎨 Rendering Karyawan Dashboard');
+    console.log("🎨 Rendering Karyawan Dashboard");
+    console.log("Current user:", currentUser);
+    console.log("All lembur data:", allLembur.length);
+    console.log("All cutoff:", allCutOff.length);
+    console.log("Active cutoffs:", activeCutOffs);
+    console.log("Selected cutoff:", selectedCutOff);
     
     // User info - IMPROVED: Make name more prominent
-    const userNameEl = document.getElementById('userName');
-    const userNIKEl = document.getElementById('userNIK');
+    const userNameEl = document.getElementById("userName");
+    const userNIKEl = document.getElementById("userNIK");
     if (userNameEl) userNameEl.textContent = currentUser.nama;
     if (userNIKEl) userNIKEl.textContent = `NIK: ${currentUser.nik}`;
 
@@ -396,16 +401,19 @@ function renderKaryawanDashboard() {
     renderPeriodSelector();
     
     // Active period display
-    const activePeriodEl = document.getElementById('activePeriod');
+    const activePeriodEl = document.getElementById("activePeriod");
     if (activePeriodEl && selectedCutOff) {
         activePeriodEl.textContent = `${selectedCutOff.bulan}: ${formatDate(selectedCutOff.tanggalMulai)} - ${formatDate(selectedCutOff.tanggalAkhir)}`;
     } else if (activePeriodEl) {
-        activePeriodEl.textContent = 'Tidak ada periode aktif';
+        activePeriodEl.textContent = "Tidak ada periode aktif";
     }
 
-    // Filter lembur
+    // Filter lembur - ALWAYS show all data if no period selected
     const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
-    const periodLembur = filterLemburByPeriod(userLembur, selectedCutOff);
+    console.log("User lembur records:", userLembur.length);
+    
+    const periodLembur = selectedCutOff ? filterLemburByPeriod(userLembur, selectedCutOff) : userLembur;
+    console.log("Period lembur records (after filter):", periodLembur.length);
 
     // Calculate totals
     let totalHours = 0;
@@ -416,21 +424,32 @@ function renderKaryawanDashboard() {
         totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
     });
 
+    console.log("Total hours:", totalHours);
+    console.log("Total insentif:", totalInsentif);
+
     // Display stats
-    const totalHoursEl = document.getElementById('totalHours');
-    const totalInsentifEl = document.getElementById('totalInsentif');
+    const totalHoursEl = document.getElementById("totalHours");
+    const totalInsentifEl = document.getElementById("totalInsentif");
     if (totalHoursEl) totalHoursEl.textContent = totalHours;
     if (totalInsentifEl) totalInsentifEl.textContent = formatCurrency(totalInsentif);
 
-    // Render components
+    // Render components IMMEDIATELY (no setTimeout)
+    console.log("Rendering chart with", periodLembur.length, "records...");
     renderOvertimeChart(periodLembur);
+    
+    console.log("Rendering calendar...");
     renderCalendar(periodLembur);
+    
+    console.log("Rendering history table...");
     renderHistoryTable(periodLembur);
     
     // NEW: Render comparison if there are multiple active periods
     if (activeCutOffs.length > 1) {
+        console.log("Rendering comparison...");
         renderPeriodComparison();
     }
+    
+    console.log("✅ Dashboard render complete!");
 }
 
 // NEW: Period selector for karyawan
@@ -544,75 +563,148 @@ function renderPeriodComparison() {
 function renderOvertimeChart(lemburData) {
     const ctx = document.getElementById('overtimeChart');
     if (!ctx) {
-        console.warn('overtimeChart element not found');
+        console.warn('❌ overtimeChart element not found');
         return;
     }
     
+    console.log('📊 Rendering overtime chart with', lemburData ? lemburData.length : 0, 'records');
+    
     // Wait for Chart.js
     if (typeof Chart === 'undefined') {
-        console.warn('Chart.js not loaded yet, retrying...');
+        console.warn('⏳ Chart.js not loaded yet, retrying...');
         setTimeout(() => renderOvertimeChart(lemburData), 1000);
         return;
     }
 
-    console.log('Rendering overtime chart with', lemburData.length, 'records');
+    // Destroy existing chart
+    if (window.overtimeChart) {
+        window.overtimeChart.destroy();
+        window.overtimeChart = null;
+    }
+
+    // Handle empty data
+    if (!lemburData || lemburData.length === 0) {
+        console.log('📊 No data for chart, showing empty message');
+        // Create empty chart with message
+        window.overtimeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Jam Lembur',
+                    data: [],
+                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Belum ada data lembur untuk periode ini',
+                        color: '#9ca3af',
+                        font: {
+                            size: 14
+                        }
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Jam Lembur'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Minggu'
+                        }
+                    }
+                }
+            }
+        });
+        return;
+    }
 
     // Group by week
     const weekData = {};
     lemburData.forEach(l => {
-        const date = new Date(l.tanggal);
-        const weekNum = getWeekNumber(date);
-        const weekKey = `Minggu ${weekNum}`;
-        
-        if (!weekData[weekKey]) weekData[weekKey] = 0;
-        weekData[weekKey] += parseJamLembur(l.jamLembur);
-    });
-
-    // Destroy existing
-    if (window.overtimeChart) {
-        window.overtimeChart.destroy();
-    }
-
-    // Create chart
-    window.overtimeChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(weekData),
-            datasets: [{
-                label: 'Jam Lembur',
-                data: Object.values(weekData),
-                backgroundColor: 'rgba(79, 70, 229, 0.8)',
-                borderColor: 'rgba(79, 70, 229, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { 
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Jam Lembur'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Minggu'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
+        try {
+            const date = new Date(l.tanggal);
+            const weekNum = getWeekNumber(date);
+            const weekKey = `Minggu ${weekNum}`;
+            
+            if (!weekData[weekKey]) weekData[weekKey] = 0;
+            weekData[weekKey] += parseJamLembur(l.jamLembur);
+        } catch (error) {
+            console.error('Error processing lembur record:', l, error);
         }
     });
-    
-    console.log('✅ Chart rendered successfully');
+
+    console.log('📊 Week data:', weekData);
+
+    // Create chart
+    try {
+        window.overtimeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(weekData),
+                datasets: [{
+                    label: 'Jam Lembur',
+                    data: Object.values(weekData),
+                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Jam Lembur'
+                        },
+                        ticks: {
+                            stepSize: 5
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Minggu'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' jam';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log('✅ Chart rendered successfully');
+    } catch (error) {
+        console.error('❌ Error creating chart:', error);
+    }
 }
 
 function getWeekNumber(date) {
@@ -721,13 +813,15 @@ function changePage(direction) {
 function renderHistoryTable(lemburData) {
     const tbody = document.getElementById('historyTable');
     if (!tbody) {
-        console.warn('historyTable element not found');
+        console.warn('❌ historyTable element not found');
         return;
     }
     
-    console.log('Rendering history table with', lemburData.length, 'records');
+    console.log('📋 Rendering history table with', lemburData ? lemburData.length : 0, 'records');
+    console.log('📋 Current page:', currentPage);
     
     if (!lemburData || lemburData.length === 0) {
+        console.log('📋 No data to display');
         tbody.innerHTML = `
             <tr>
                 <td colspan="5" class="px-4 py-8 text-center text-gray-500">
@@ -748,34 +842,65 @@ function renderHistoryTable(lemburData) {
         return;
     }
 
-    const sortedData = [...lemburData].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+    const sortedData = [...lemburData].sort((a, b) => {
+        const dateA = new Date(a.tanggal);
+        const dateB = new Date(b.tanggal);
+        return dateB - dateA; // Newest first
+    });
+    
+    console.log('📋 Sorted data:', sortedData.length, 'records');
     
     // Pagination
     const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+    console.log('📋 Total pages:', totalPages);
+    
+    // Reset to page 1 if current page exceeds total pages
+    if (currentPage > totalPages) {
+        currentPage = 1;
+    }
+    
     const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
     const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
     const currentItems = sortedData.slice(indexOfFirstItem, indexOfLastItem);
+    
+    console.log('📋 Showing items', indexOfFirstItem, 'to', indexOfLastItem);
+    console.log('📋 Current items:', currentItems.length);
 
-    tbody.innerHTML = currentItems.map(l => {
-        const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
-        return `
-            <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-3 text-sm">${formatDate(l.tanggal)}</td>
-                <td class="px-4 py-3 text-sm">
-                    <span class="px-2 py-1 rounded-full text-xs font-medium ${
-                        l.jenisLembur.toLowerCase().includes('libur') 
-                            ? 'bg-red-100 text-red-800' 
-                            : 'bg-blue-100 text-blue-800'
-                    }">
-                        ${l.jenisLembur}
-                    </span>
+    try {
+        tbody.innerHTML = currentItems.map(l => {
+            const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
+            return `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3 text-sm">${formatDate(l.tanggal)}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                            l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur') 
+                                ? 'bg-red-100 text-red-800' 
+                                : 'bg-blue-100 text-blue-800'
+                        }">
+                            ${l.jenisLembur || '-'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm font-semibold text-indigo-600">${l.jamLembur || '0 Jam'}</td>
+                    <td class="px-4 py-3 text-sm font-semibold text-green-600">${formatCurrency(insentif)}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">${l.keterangan || '-'}</td>
+                </tr>
+            `;
+        }).join('');
+        
+        console.log('✅ Table HTML rendered');
+    } catch (error) {
+        console.error('❌ Error rendering table:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-red-500">
+                    <p class="text-lg font-medium">Error menampilkan data</p>
+                    <p class="text-sm mt-2">${error.message}</p>
                 </td>
-                <td class="px-4 py-3 text-sm font-semibold text-indigo-600">${l.jamLembur}</td>
-                <td class="px-4 py-3 text-sm font-semibold text-green-600">${formatCurrency(insentif)}</td>
-                <td class="px-4 py-3 text-sm text-gray-600">${l.keterangan || '-'}</td>
             </tr>
         `;
-    }).join('');
+        return;
+    }
 
     // Pagination controls
     const paginationDiv = document.getElementById('paginationControls');
