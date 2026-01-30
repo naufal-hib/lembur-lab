@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - Sistem Lembur</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-100">
@@ -28,19 +27,22 @@
     <div class="container mx-auto px-4 mt-6">
         <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="flex border-b overflow-x-auto">
-                <button onclick="switchTab('overview')" class="tab-button px-6 py-4 font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 border-b-2 border-transparent whitespace-nowrap" data-tab="overview">
+                <button onclick="switchTab('overview')" class="tab-button px-6 py-4 font-medium text-indigo-600 border-b-2 border-indigo-600 whitespace-nowrap">
                     📊 Overview
                 </button>
-                <button onclick="switchTab('karyawan')" class="tab-button px-6 py-4 font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 border-b-2 border-transparent whitespace-nowrap" data-tab="karyawan">
+                <button onclick="switchTab('karyawan')" class="tab-button px-6 py-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-indigo-600 hover:bg-gray-50 whitespace-nowrap">
                     👥 Data Karyawan
                 </button>
-                <button onclick="switchTab('lembur')" class="tab-button px-6 py-4 font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 border-b-2 border-transparent whitespace-nowrap" data-tab="lembur">
+                <button onclick="switchTab('lembur')" class="tab-button px-6 py-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-indigo-600 hover:bg-gray-50 whitespace-nowrap">
                     ⏰ Data Lembur
                 </button>
-                <button onclick="switchTab('cutoff')" class="tab-button px-6 py-4 font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 border-b-2 border-transparent whitespace-nowrap" data-tab="cutoff">
+                <button onclick="switchTab('cutoff')" class="tab-button px-6 py-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-indigo-600 hover:bg-gray-50 whitespace-nowrap">
                     📅 Cut-Off Period
                 </button>
             </div>
+
+            <!-- Alert Messages -->
+            <div id="alert" class="hidden m-6"></div>
 
             <!-- Overview Tab -->
             <div id="overview-tab" class="tab-content p-6">
@@ -53,7 +55,7 @@
                 </div>
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
                         <div class="flex items-center justify-between">
                             <div>
@@ -115,7 +117,6 @@
                         id="searchKaryawan" 
                         placeholder="Cari NIK atau Nama..." 
                         class="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        onkeyup="searchKaryawan()"
                     />
                 </div>
 
@@ -132,9 +133,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="karyawanTable" class="divide-y divide-gray-200">
-                            <!-- Data akan diisi oleh JavaScript -->
-                        </tbody>
+                        <tbody id="karyawanTable" class="divide-y divide-gray-200"></tbody>
                     </table>
                 </div>
             </div>
@@ -143,48 +142,12 @@
             <div id="lembur-tab" class="tab-content hidden p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <h2 class="text-2xl font-bold text-gray-800">Data Lembur</h2>
-                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                        <!-- Button Import Excel -->
-                        <button onclick="showImportModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition flex items-center space-x-2 flex-1 sm:flex-initial justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                            </svg>
-                            <span>Import Excel</span>
-                        </button>
-                        
-                        <!-- Button Export PDF -->
-                        <button onclick="exportAllLemburPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition flex items-center space-x-2 flex-1 sm:flex-initial justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                            </svg>
-                            <span>Export PDF</span>
-                        </button>
-
-                        <!-- Button Export CSV -->
-                        <button onclick="exportLemburToCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition flex items-center space-x-2 flex-1 sm:flex-initial justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span>Export CSV</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Filters -->
-                <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                    <input 
-                        type="text" 
-                        id="searchLembur" 
-                        placeholder="Cari NIK atau Nama..." 
-                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        onkeyup="filterLembur()"
-                    />
-                    <input 
-                        type="date" 
-                        id="filterDate" 
-                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        onchange="filterLembur()"
-                    />
+                    <button onclick="exportToExcel()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Export CSV</span>
+                    </button>
                 </div>
 
                 <!-- Stats -->
@@ -208,24 +171,14 @@
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
                             </tr>
                         </thead>
-                        <tbody id="lemburTable" class="divide-y divide-gray-200">
-                            <!-- Data akan diisi oleh JavaScript -->
-                        </tbody>
+                        <tbody id="lemburTable" class="divide-y divide-gray-200"></tbody>
                     </table>
                 </div>
             </div>
 
             <!-- Cut-Off Tab -->
             <div id="cutoff-tab" class="tab-content hidden p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Manage Cut-Off Period</h2>
-                    <button onclick="showCutOffModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition flex items-center space-x-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        <span>Tambah Periode</span>
-                    </button>
-                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Cut-Off Period</h2>
 
                 <!-- Table -->
                 <div class="overflow-x-auto">
@@ -239,144 +192,10 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="cutoffTable" class="divide-y divide-gray-200">
-                            <!-- Data akan diisi oleh JavaScript -->
-                        </tbody>
+                        <tbody id="cutoffTable" class="divide-y divide-gray-200"></tbody>
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Modal Import Excel -->
-    <div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 999999;">
-        <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="bg-gradient-to-r from-green-600 to-teal-600 text-white p-6 rounded-t-lg">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold">Import Data Lembur dari Excel</h3>
-                    <button onclick="closeImportModal()" class="text-white hover:text-gray-200 text-3xl">&times;</button>
-                </div>
-            </div>
-            <div class="p-6">
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload File Excel</label>
-                    <input 
-                        type="file" 
-                        id="excelFileInput" 
-                        accept=".xlsx,.xls" 
-                        onchange="handleExcelUpload(event)"
-                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                    />
-                    <p class="mt-2 text-xs text-gray-500">
-                        Format file dari web perusahaan dengan kolom: NO, TANGGAL, NIK, NAMA LENGKAP, JAM LEMBUR, JENIS LEMBUR
-                    </p>
-                </div>
-                
-                <div id="importPreview" class="mb-6"></div>
-                
-                <div class="flex justify-end space-x-3">
-                    <button 
-                        onclick="closeImportModal()" 
-                        class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition"
-                    >
-                        Batal
-                    </button>
-                    <button 
-                        id="importBtn"
-                        onclick="importData()" 
-                        disabled
-                        class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    >
-                        Import Data
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Cut-Off Period -->
-    <div id="cutoffModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 999999;">
-        <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full mx-4">
-            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-lg">
-                <div class="flex justify-between items-center">
-                    <h3 id="cutoffModalTitle" class="text-2xl font-bold">Manage Cut-Off Period</h3>
-                    <button onclick="closeCutOffModal()" class="text-white hover:text-gray-200 text-3xl">&times;</button>
-                </div>
-            </div>
-            <form id="cutoffForm" onsubmit="saveCutOff(event)" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Nama Bulan</label>
-                    <input 
-                        type="text" 
-                        id="cutoffBulan" 
-                        placeholder="Contoh: Januari 2026"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        required
-                    />
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
-                        <input 
-                            type="date" 
-                            id="cutoffStart" 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Akhir</label>
-                        <input 
-                            type="date" 
-                            id="cutoffEnd" 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            required
-                        />
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select 
-                        id="cutoffStatus" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    >
-                        <option value="">Tidak Aktif</option>
-                        <option value="Aktif">Aktif</option>
-                    </select>
-                    <p class="mt-1 text-xs text-gray-500">Hanya satu periode yang boleh aktif</p>
-                </div>
-                
-                <div class="flex justify-end space-x-3 pt-4">
-                    <button 
-                        type="button"
-                        onclick="closeCutOffModal()" 
-                        class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition"
-                    >
-                        Batal
-                    </button>
-                    <button 
-                        type="submit"
-                        class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
-                    >
-                        Simpan
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Employee Detail -->
-    <div id="employeeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 999999;">
-        <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-lg">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold">Detail Karyawan</h3>
-                    <button onclick="closeEmployeeModal()" class="text-white hover:text-gray-200 text-3xl">&times;</button>
-                </div>
-            </div>
-            <div id="employeeModalContent" class="p-6"></div>
         </div>
     </div>
 
@@ -388,12 +207,10 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
-    <script src="admin-features.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', initAdminDashboard);
+    </script>
 </body>
 </html>
