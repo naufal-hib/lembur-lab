@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic Tool - Sistem Lembur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">🔧 Diagnostic Tool</h1>
+            <p class="text-gray-600 mb-6">Test Google Sheets API connection & permissions</p>
+            
+            <!-- Status Card -->
+            <div id="statusCard" class="hidden mb-6 p-4 rounded-lg"></div>
+            
+            <!-- Test Button -->
+            <button 
+                onclick="runDiagnostic()" 
+                id="testBtn"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition"
+            >
+                🚀 Run Diagnostic Test
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="space-y-4"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        async function runDiagnostic() {
+            const results = document.getElementById('results');
+            const statusCard = document.getElementById('statusCard');
+            const testBtn = document.getElementById('testBtn');
+            
+            results.innerHTML = '';
+            statusCard.classList.add('hidden');
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ Testing...';
+            
+            // Test 1: Config Check
+            addResult('🔍 Step 1: Checking Configuration...', 'info');
+            
+            const configCheck = validateConfig();
+            if (!configCheck.valid) {
+                addResult('❌ Config Error: ' + configCheck.message, 'error');
+                addResult('💡 Solution: Edit config.js and set SPREADSHEET_ID and API_KEY', 'warning');
+                testBtn.disabled = false;
+                testBtn.textContent = '🚀 Run Diagnostic Test';
+                return;
+            }
+            
+            addResult('✅ Config OK', 'success');
+            addResult(`📋 Spreadsheet ID: ${SPREADSHEET_ID}`, 'info');
+            addResult(`🔑 API Key: ${API_KEY.substring(0, 20)}...`, 'info');
+            
+            // Test 2: API Key Test
+            addResult('🔍 Step 2: Testing API Key...', 'info');
+            
+            try {
+                const testUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=${API_KEY}`;
+                const response = await fetch(testUrl);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('✅ API Key is valid!', 'success');
+                    addResult(`📊 Spreadsheet: "${data.properties.title}"`, 'info');
+                } else if (response.status === 403) {
+                    addResult('❌ Error 403: API Key Restriction Problem', 'error');
+                    addResult(`🌐 Current URL: ${window.location.origin}`, 'info');
+                    addResult('💡 Solutions:', 'warning');
+                    addResult('1. Go to Google Cloud Console → APIs & Services → Credentials', 'warning');
+                    addResult('2. Click your API Key', 'warning');
+                    addResult('3. Under "Application restrictions" → "HTTP referrers"', 'warning');
+                    addResult(`4. Add: ${window.location.origin}/*`, 'warning');
+                    addResult('5. Add: http://localhost/* (for local testing)', 'warning');
+                    addResult('6. Save and wait 1-2 minutes', 'warning');
+                } else if (response.status === 404) {
+                    addResult('❌ Error 404: Spreadsheet not found', 'error');
+                    addResult('💡 Solution: Check if SPREADSHEET_ID is correct in config.js', 'warning');
+                } else {
+                    addResult(`❌ Error ${response.status}: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Network Error: ' + error.message, 'error');
+                addResult('💡 Solution: Check your internet connection', 'warning');
+            }
+            
+            // Test 3: Sheet Names Test
+            addResult('🔍 Step 3: Testing Sheet Names...', 'info');
+            
+            const sheetsToTest = ['Karyawan', 'Lembur', 'CutOff', 'Config'];
+            
+            for (const sheetName of sheetsToTest) {
+                try {
+                    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}?key=${API_KEY}`;
+                    const response = await fetch(url);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const rowCount = data.values ? data.values.length : 0;
+                        addResult(`✅ Sheet "${sheetName}": ${rowCount} rows`, 'success');
+                    } else if (response.status === 403) {
+                        addResult(`❌ Sheet "${sheetName}": Permission Denied (403)`, 'error');
+                        addResult('💡 Solution: Make sure Google Sheets is shared as "Anyone with link - Viewer"', 'warning');
+                        addResult('Steps:', 'warning');
+                        addResult('1. Open your Google Sheets', 'warning');
+                        addResult('2. Click "Share" button (top right)', 'warning');
+                        addResult('3. Under "General access" select "Anyone with the link"', 'warning');
+                        addResult('4. Set permission to "Viewer"', 'warning');
+                        addResult('5. Click "Done"', 'warning');
+                        break; // Stop testing if permission error
+                    } else if (response.status === 400) {
+                        addResult(`❌ Sheet "${sheetName}": Not found or wrong name`, 'error');
+                        addResult(`💡 Solution: Make sure sheet name is EXACTLY "${sheetName}" (case-sensitive)`, 'warning');
+                    } else {
+                        addResult(`❌ Sheet "${sheetName}": Error ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    addResult(`❌ Sheet "${sheetName}": ${error.message}`, 'error');
+                }
+            }
+            
+            // Test 4: Data Structure Test
+            addResult('🔍 Step 4: Testing Data Structure...', 'info');
+            
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Karyawan?key=${API_KEY}`;
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.values && data.values.length > 0) {
+                        const headers = data.values[0];
+                        const expectedHeaders = ['NIK', 'Nama Lengkap', 'Departemen', 'Jabatan', 'Password', 'Level'];
+                        
+                        const hasAllHeaders = expectedHeaders.every(h => headers.includes(h));
+                        
+                        if (hasAllHeaders) {
+                            addResult('✅ Sheet "Karyawan" has correct headers', 'success');
+                            addResult(`📊 Total karyawan: ${data.values.length - 1}`, 'info');
+                        } else {
+                            addResult('⚠️ Sheet "Karyawan" headers incomplete', 'warning');
+                            addResult(`Expected: ${expectedHeaders.join(', ')}`, 'warning');
+                            addResult(`Found: ${headers.join(', ')}`, 'warning');
+                        }
+                    }
+                }
+            } catch (error) {
+                addResult('⚠️ Could not verify data structure', 'warning');
+            }
+            
+            // Final Summary
+            addResult('', 'info');
+            addResult('=' .repeat(50), 'info');
+            addResult('📋 DIAGNOSTIC COMPLETE', 'info');
+            addResult('', 'info');
+            
+            const errorCount = document.querySelectorAll('.text-red-600').length;
+            
+            if (errorCount === 0) {
+                statusCard.className = 'mb-6 p-4 rounded-lg bg-green-100 border border-green-400 text-green-800';
+                statusCard.innerHTML = '<strong>✅ All tests passed!</strong> Your system should work correctly.';
+                statusCard.classList.remove('hidden');
+                addResult('✅ System is ready to use!', 'success');
+                addResult('🚀 You can now go back to login page and try again', 'success');
+            } else {
+                statusCard.className = 'mb-6 p-4 rounded-lg bg-red-100 border border-red-400 text-red-800';
+                statusCard.innerHTML = `<strong>❌ Found ${errorCount} error(s)</strong> - Please fix the issues above.`;
+                statusCard.classList.remove('hidden');
+                addResult(`❌ Found ${errorCount} error(s) - Fix them and run test again`, 'error');
+            }
+            
+            testBtn.disabled = false;
+            testBtn.textContent = '🔄 Run Test Again';
+        }
+        
+        function addResult(message, type) {
+            const results = document.getElementById('results');
+            const colors = {
+                success: 'bg-green-50 border-green-200 text-green-800',
+                error: 'bg-red-50 border-red-200 text-red-800',
+                warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                info: 'bg-blue-50 border-blue-200 text-blue-800'
+            };
+            
+            const div = document.createElement('div');
+            div.className = `p-3 rounded-lg border ${colors[type] || colors.info}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+        
+        function validateConfig() {
+            if (SPREADSHEET_ID === 'GANTI_DENGAN_SPREADSHEET_ID_ANDA') {
+                return {
+                    valid: false,
+                    message: 'SPREADSHEET_ID belum dikonfigurasi!'
+                };
+            }
+            
+            if (API_KEY === 'GANTI_DENGAN_API_KEY_ANDA') {
+                return {
+                    valid: false,
+                    message: 'API_KEY belum dikonfigurasi!'
+                };
+            }
+            
+            return { valid: true };
+        }
+    </script>
+</body>
+</html>
