@@ -390,7 +390,7 @@ function renderKaryawanDashboard() {
     const userNameEl = document.getElementById('userName');
     const userNIKEl = document.getElementById('userNIK');
     if (userNameEl) userNameEl.textContent = currentUser.nama;
-    if (userNIKEl) userNIKEl.textContent = `NIK: ${current User.nik}`;
+    if (userNIKEl) userNIKEl.textContent = `NIK: ${currentUser.nik}`;
 
     // Period selector - NEW: Show all active periods
     renderPeriodSelector();
