@@ -433,9 +433,9 @@ function renderKaryawanDashboard() {
     if (totalHoursEl) totalHoursEl.textContent = totalHours;
     if (totalInsentifEl) totalInsentifEl.textContent = formatCurrency(totalInsentif);
 
-    // Render components IMMEDIATELY (no setTimeout)
-    console.log("Rendering chart with", periodLembur.length, "records...");
-    renderOvertimeChart(periodLembur);
+    // Render components IMMEDIATELY
+    console.log("Rendering stats with", periodLembur.length, "records...");
+    renderStatsBreakdown(periodLembur);
     
     console.log("Rendering calendar...");
     renderCalendar(periodLembur);
@@ -558,6 +558,116 @@ function renderPeriodComparison() {
     `;
     
     comparisonContainer.innerHTML = html;
+}
+
+// NEW: Render stats breakdown instead of chart (more reliable, no Chart.js dependency)
+function renderStatsBreakdown(lemburData) {
+    const container = document.getElementById('statsBreakdown');
+    if (!container) {
+        console.warn('statsBreakdown element not found');
+        return;
+    }
+    
+    console.log('📊 Rendering stats breakdown with', lemburData ? lemburData.length : 0, 'records');
+    
+    if (!lemburData || lemburData.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <p class="font-medium">Belum ada data lembur</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Group by type
+    let hariKerja = 0;
+    let hariLibur = 0;
+    let totalDays = 0;
+    
+    const uniqueDates = new Set();
+    
+    lemburData.forEach(l => {
+        uniqueDates.add(l.tanggal);
+        if (l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur')) {
+            hariLibur += parseJamLembur(l.jamLembur);
+        } else {
+            hariKerja += parseJamLembur(l.jamLembur);
+        }
+    });
+    
+    totalDays = uniqueDates.size;
+    const totalJam = hariKerja + hariLibur;
+    const maxJam = Math.max(hariKerja, hariLibur, 1); // Prevent division by zero
+    
+    const hariKerjaPercent = (hariKerja / maxJam) * 100;
+    const hariLiburPercent = (hariLibur / maxJam) * 100;
+    
+    container.innerHTML = `
+        <div class="space-y-4">
+            <!-- Total Summary -->
+            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-200">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-600 font-medium">Total Hari Lembur</p>
+                        <p class="text-3xl font-bold text-indigo-600">${totalDays}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600 font-medium">Total Jam</p>
+                        <p class="text-3xl font-bold text-purple-600">${totalJam}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hari Kerja Bar -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-semibold text-gray-700 flex items-center">
+                        <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                        Hari Kerja
+                    </span>
+                    <span class="text-sm font-bold text-blue-600">${hariKerja} jam</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2" style="width: ${hariKerjaPercent}%">
+                        ${hariKerjaPercent > 20 ? '<span class="text-xs font-bold text-white">' + hariKerja + '</span>' : ''}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hari Libur Bar -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-semibold text-gray-700 flex items-center">
+                        <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                        Hari Libur
+                    </span>
+                    <span class="text-sm font-bold text-red-600">${hariLibur} jam</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                    <div class="bg-gradient-to-r from-red-500 to-red-600 h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2" style="width: ${hariLiburPercent}%">
+                        ${hariLiburPercent > 20 ? '<span class="text-xs font-bold text-white">' + hariLibur + '</span>' : ''}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Summary -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
+                    <p class="text-2xl font-bold text-blue-600">${hariKerja}</p>
+                    <p class="text-xs text-gray-600 font-medium mt-1">Jam Hari Kerja</p>
+                </div>
+                <div class="bg-red-50 rounded-lg p-3 text-center border border-red-200">
+                    <p class="text-2xl font-bold text-red-600">${hariLibur}</p>
+                    <p class="text-xs text-gray-600 font-medium mt-1">Jam Hari Libur</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    console.log('✅ Stats breakdown rendered');
 }
 
 function renderOvertimeChart(lemburData) {
@@ -721,8 +831,29 @@ function renderCalendar(lemburData) {
     const calendarDiv = document.getElementById('calendar');
     const monthTitle = document.getElementById('calendarMonth');
     if (!calendarDiv || !monthTitle) {
-        console.warn('Calendar elements not found');
+        console.warn('❌ Calendar elements not found');
         return;
+    }
+    
+    console.log('📅 Rendering calendar with', lemburData ? lemburData.length : 0, 'records');
+
+    // Auto-select month with data if current month has no data
+    if (lemburData && lemburData.length > 0) {
+        const year = currentCalendarMonth.getFullYear();
+        const month = currentCalendarMonth.getMonth();
+        
+        // Check if current month has data
+        const hasDataThisMonth = lemburData.some(l => {
+            const date = new Date(l.tanggal);
+            return date.getMonth() === month && date.getFullYear() === year;
+        });
+        
+        // If no data this month, use first available month
+        if (!hasDataThisMonth) {
+            const firstDate = new Date(lemburData[0].tanggal);
+            currentCalendarMonth = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+            console.log('📅 Auto-selected month:', currentCalendarMonth.toLocaleDateString('id-ID'));
+        }
     }
 
     const year = currentCalendarMonth.getFullYear();
@@ -751,14 +882,18 @@ function renderCalendar(lemburData) {
 
     // Create lembur map
     const lemburMap = {};
+    let foundDataThisMonth = 0;
     lemburData.forEach(l => {
         const date = new Date(l.tanggal);
         if (date.getMonth() === month && date.getFullYear() === year) {
             const day = date.getDate();
             if (!lemburMap[day]) lemburMap[day] = 0;
             lemburMap[day] += parseJamLembur(l.jamLembur);
+            foundDataThisMonth++;
         }
     });
+    
+    console.log('📅 Found', foundDataThisMonth, 'records for', monthTitle.textContent);
 
     // Days
     for (let day = 1; day <= daysInMonth; day++) {
@@ -785,6 +920,7 @@ function renderCalendar(lemburData) {
     }
 
     calendarDiv.innerHTML = html;
+    console.log('✅ Calendar rendered');
 }
 
 function changeMonth(delta) {
