@@ -843,7 +843,7 @@ function renderCutOffTab() {
     const tbody = document.getElementById('cutoffTable');
     if (!tbody) return;
     
-    tbody.innerHTML = allCutOff.map(c => `
+    tbody.innerHTML = allCutOff.map((c, index) => `
         <tr class="hover:bg-gray-50">
             <td class="px-4 py-3 text-sm font-medium">${c.bulan}</td>
             <td class="px-4 py-3 text-sm">${formatDate(c.tanggalMulai)}</td>
@@ -856,6 +856,19 @@ function renderCutOffTab() {
                 }">
                     ${c.status || '-'}
                 </span>
+            </td>
+            <td class="px-4 py-3 text-sm space-x-2">
+                ${c.status !== 'Aktif' ? `
+                    <button onclick="setActiveCutOff(${index})" class="text-green-600 hover:text-green-800 font-medium text-xs">
+                        Set Aktif
+                    </button>
+                ` : ''}
+                <button onclick="showCutOffModal(true, allCutOff[${index}])" class="text-indigo-600 hover:text-indigo-800 font-medium text-xs">
+                    Edit
+                </button>
+                <button onclick="deleteCutOff(${index})" class="text-red-600 hover:text-red-800 font-medium text-xs">
+                    Hapus
+                </button>
             </td>
         </tr>
     `).join('');
