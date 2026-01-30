@@ -27,6 +27,11 @@ function hideLoading() {
 
 function showAlert(message, type = 'info') {
     const alert = document.getElementById('alert');
+    if (!alert) {
+        console.log('Alert element not found, message:', message);
+        return;
+    }
+    
     const types = {
         success: 'bg-green-100 border-green-400 text-green-700',
         error: 'bg-red-100 border-red-400 text-red-700',
@@ -57,6 +62,7 @@ function formatCurrency(amount) {
 }
 
 function formatDate(dateString) {
+    if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', {
         day: '2-digit',
@@ -66,18 +72,28 @@ function formatDate(dateString) {
 }
 
 function parseJamLembur(jamString) {
-    // Parse "3 Jam" => 3
-    const match = jamString.match(/(\d+)/);
+    if (!jamString) return 0;
+    const match = String(jamString).match(/(\d+)/);
     return match ? parseInt(match[1]) : 0;
 }
 
 function saveToLocalStorage(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+        console.log(`✅ Saved to localStorage: ${key} (${Array.isArray(data) ? data.length : 'N/A'} items)`);
+    } catch (e) {
+        console.error(`❌ Failed to save to localStorage: ${key}`, e);
+    }
 }
 
 function getFromLocalStorage(key) {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    } catch (e) {
+        console.error(`❌ Failed to read from localStorage: ${key}`, e);
+        return null;
+    }
 }
 
 // ============================================
@@ -87,6 +103,8 @@ function getFromLocalStorage(key) {
 async function fetchSheetData(sheetName, range = '') {
     try {
         const url = getSheetUrl(sheetName, range);
+        console.log(`📥 Fetching ${sheetName} from:`, url);
+        
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -94,14 +112,16 @@ async function fetchSheetData(sheetName, range = '') {
         }
         
         const data = await response.json();
+        console.log(`✅ Fetched ${sheetName}:`, data.values ? data.values.length : 0, 'rows');
         return data.values || [];
     } catch (error) {
-        console.error(`Error fetching ${sheetName}:`, error);
+        console.error(`❌ Error fetching ${sheetName}:`, error);
         throw error;
     }
 }
 
 async function loadAllData() {
+    console.log('🔄 Starting loadAllData...');
     showLoading();
     
     try {
@@ -111,6 +131,8 @@ async function loadAllData() {
             throw new Error(configCheck.message);
         }
         
+        console.log('✅ Config valid, loading data from Google Sheets...');
+        
         // Load all data from sheets
         const [karyawanData, lemburData, cutOffData] = await Promise.all([
             fetchSheetData(SHEET_CONFIG.KARYAWAN),
@@ -118,17 +140,27 @@ async function loadAllData() {
             fetchSheetData(SHEET_CONFIG.CUTOFF)
         ]);
         
+        console.log('📊 Raw data loaded:', {
+            karyawan: karyawanData.length,
+            lembur: lemburData.length,
+            cutoff: cutOffData.length
+        });
+        
         // Process Karyawan data
         allKaryawan = processKaryawanData(karyawanData);
+        console.log('✅ Processed karyawan:', allKaryawan.length);
         
         // Process Lembur data
         allLembur = processLemburData(lemburData);
+        console.log('✅ Processed lembur:', allLembur.length);
         
         // Process CutOff data
         allCutOff = processCutOffData(cutOffData);
+        console.log('✅ Processed cutoff:', allCutOff.length);
         
         // Find active cut-off
         activeCutOff = allCutOff.find(c => c.status === 'Aktif');
+        console.log('📅 Active cut-off:', activeCutOff ? activeCutOff.bulan : 'None');
         
         // Save to localStorage for caching
         saveToLocalStorage('karyawan', allKaryawan);
@@ -137,9 +169,33 @@ async function loadAllData() {
         saveToLocalStorage('lastUpdate', new Date().toISOString());
         
         hideLoading();
+        console.log('✅ loadAllData completed successfully!');
         return true;
     } catch (error) {
+        console.error('❌ loadAllData failed:', error);
         hideLoading();
+        
+        // Try to load from localStorage as fallback
+        console.log('🔄 Trying to load from localStorage as fallback...');
+        const cachedKaryawan = getFromLocalStorage('karyawan');
+        const cachedLembur = getFromLocalStorage('lembur');
+        const cachedCutOff = getFromLocalStorage('cutoff');
+        
+        if (cachedKaryawan && cachedLembur && cachedCutOff) {
+            allKaryawan = cachedKaryawan;
+            allLembur = cachedLembur;
+            allCutOff = cachedCutOff;
+            activeCutOff = allCutOff.find(c => c.status === 'Aktif');
+            
+            console.log('✅ Loaded from localStorage cache:', {
+                karyawan: allKaryawan.length,
+                lembur: allLembur.length,
+                cutoff: allCutOff.length
+            });
+            
+            showAlert('Data dimuat dari cache lokal. Pastikan koneksi internet untuk data terbaru.', 'warning');
+            return true;
+        }
         
         // User-friendly error messages
         let userMessage = 'Gagal memuat data. ';
@@ -149,24 +205,16 @@ async function loadAllData() {
         } else if (error.message.includes('API_KEY')) {
             userMessage += 'Konfigurasi sistem belum lengkap. Hubungi administrator.';
         } else if (error.message.includes('403')) {
-            userMessage += 'Tidak memiliki akses ke data. Hubungi administrator.';
+            userMessage += 'Tidak memiliki akses ke data. Pastikan Google Sheets API enabled.';
         } else if (error.message.includes('404')) {
-            userMessage += 'Data tidak ditemukan. Hubungi administrator.';
+            userMessage += 'Data tidak ditemukan. Periksa Spreadsheet ID.';
         } else if (error.message.includes('Unable to parse range')) {
-            userMessage += 'Format data tidak sesuai. Hubungi administrator.';
+            userMessage += 'Format data tidak sesuai.';
         } else {
-            userMessage += 'Terjadi kesalahan. Silakan coba lagi atau hubungi administrator.';
+            userMessage += 'Periksa koneksi internet dan coba lagi.';
         }
         
         showAlert(userMessage, 'error');
-        
-        // Log detail error to console for debugging
-        console.error('=== ERROR LOADING DATA ===');
-        console.error('Error:', error);
-        console.error('Error message:', error.message);
-        console.error('Stack:', error.stack);
-        console.error('=========================');
-        
         return false;
     }
 }
@@ -177,13 +225,13 @@ function processKaryawanData(data) {
     const headers = data[0];
     const rows = data.slice(1);
     
-    return rows.map(row => ({
-        nik: row[0] || '',
+    return rows.filter(row => row[0]).map(row => ({
+        nik: String(row[0] || '').trim(),
         nama: row[1] || '',
         departemen: row[2] || '',
         jabatan: row[3] || '',
         password: row[4] || '123',
-        level: row[5] || 'staff' // 'supervisor' atau 'staff'
+        level: row[5] || 'staff'
     }));
 }
 
@@ -193,10 +241,10 @@ function processLemburData(data) {
     const headers = data[0];
     const rows = data.slice(1);
     
-    return rows.map(row => ({
+    return rows.filter(row => row[2]).map(row => ({
         no: row[0] || '',
         tanggal: row[1] || '',
-        nik: row[2] || '',
+        nik: String(row[2] || '').trim(),
         nama: row[3] || '',
         departemen: row[4] || '',
         jabatan: row[5] || '',
@@ -214,7 +262,7 @@ function processCutOffData(data) {
     const headers = data[0];
     const rows = data.slice(1);
     
-    return rows.map(row => ({
+    return rows.filter(row => row[0]).map(row => ({
         bulan: row[0] || '',
         tanggalMulai: row[1] || '',
         tanggalAkhir: row[2] || '',
@@ -227,6 +275,7 @@ function processCutOffData(data) {
 // ============================================
 
 async function login(nik, password) {
+    console.log('🔐 Login attempt for NIK:', nik);
     showLoading();
     
     // Check if admin
@@ -238,6 +287,7 @@ async function login(nik, password) {
                 role: 'admin'
             };
             saveToLocalStorage('currentUser', currentUser);
+            console.log('✅ Admin login successful');
             hideLoading();
             window.location.href = 'dashboard-admin.html';
             return;
@@ -250,6 +300,7 @@ async function login(nik, password) {
     
     // Load data if not cached
     if (allKaryawan.length === 0) {
+        console.log('📥 Loading data for first time...');
         const success = await loadAllData();
         if (!success) {
             hideLoading();
@@ -263,14 +314,14 @@ async function login(nik, password) {
     if (!user) {
         hideLoading();
         showAlert('NIK tidak ditemukan! Pastikan NIK Anda sudah terdaftar.', 'error');
-        console.error('Login failed: NIK not found -', nik);
+        console.error('❌ Login failed: NIK not found -', nik);
         return;
     }
     
     if (user.password !== password) {
         hideLoading();
         showAlert('Password salah! Silakan coba lagi.', 'error');
-        console.error('Login failed: Wrong password for NIK -', nik);
+        console.error('❌ Login failed: Wrong password for NIK -', nik);
         return;
     }
     
@@ -283,11 +334,13 @@ async function login(nik, password) {
         role: 'karyawan'
     };
     saveToLocalStorage('currentUser', currentUser);
+    console.log('✅ Karyawan login successful:', currentUser.nama);
     hideLoading();
     window.location.href = 'dashboard-karyawan.html';
 }
 
 function logout() {
+    console.log('🚪 Logging out...');
     localStorage.clear();
     window.location.href = 'index.html';
 }
@@ -295,9 +348,11 @@ function logout() {
 function checkAuth() {
     currentUser = getFromLocalStorage('currentUser');
     if (!currentUser) {
+        console.log('❌ No auth found, redirecting to login');
         window.location.href = 'index.html';
         return false;
     }
+    console.log('✅ Auth check passed:', currentUser.nama);
     return true;
 }
 
@@ -307,23 +362,19 @@ function checkAuth() {
 
 function calculateInsentif(jamLembur, jenisLembur, level) {
     const jam = parseJamLembur(jamLembur);
-    const isHariLibur = jenisLembur.toLowerCase().includes('libur');
+    const isHariLibur = jenisLembur && jenisLembur.toLowerCase().includes('libur');
     const isSupervisor = level === 'supervisor';
     
     if (isHariLibur) {
-        // Hari Libur - sama untuk semua level
         if (jam >= 10) return 120000;
         if (jam >= 5) return 100000;
         if (jam >= 1) return 50000;
         return 0;
     } else {
-        // Hari Kerja
         if (isSupervisor) {
-            // Supervisor: 2 jam = 30.000, +1 jam = +15.000
             if (jam < 2) return 0;
             return 30000 + ((jam - 2) * 15000);
         } else {
-            // Staff: 2 jam = 40.000, +1 jam = +20.000
             if (jam < 2) return 0;
             return 40000 + ((jam - 2) * 20000);
         }
@@ -347,6 +398,8 @@ function filterLemburByPeriod(lemburData, cutOff) {
 // ============================================
 
 async function initKaryawanDashboard() {
+    console.log('🚀 Initializing Karyawan Dashboard...');
+    
     if (!checkAuth()) return;
     
     // Load cached data first
@@ -359,37 +412,52 @@ async function initKaryawanDashboard() {
         allLembur = cachedLembur;
         allCutOff = cachedCutOff;
         activeCutOff = allCutOff.find(c => c.status === 'Aktif');
+        console.log('✅ Loaded from cache');
+        renderKaryawanDashboard();
     }
     
     // Refresh data in background
-    loadAllData().then(() => {
-        renderKaryawanDashboard();
+    loadAllData().then((success) => {
+        if (success) {
+            console.log('✅ Data refreshed from Google Sheets');
+            renderKaryawanDashboard();
+        }
     });
-    
-    // Render with cached data
-    renderKaryawanDashboard();
     
     // Setup event listeners
     setupKaryawanEventListeners();
 }
 
 function renderKaryawanDashboard() {
+    console.log('🎨 Rendering Karyawan Dashboard...');
+    
     // Display user info
-    document.getElementById('userName').textContent = currentUser.nama;
-    document.getElementById('userNIK').textContent = `NIK: ${currentUser.nik}`;
+    const userNameEl = document.getElementById('userName');
+    const userNIKEl = document.getElementById('userNIK');
+    if (userNameEl) userNameEl.textContent = currentUser.nama;
+    if (userNIKEl) userNIKEl.textContent = `NIK: ${currentUser.nik}`;
     
     // Display active period
-    if (activeCutOff) {
-        const periodText = `${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`;
-        document.getElementById('activePeriod').textContent = periodText;
-    } else {
-        document.getElementById('activePeriod').textContent = 'Tidak ada periode aktif';
-        document.getElementById('activePeriod').classList.add('text-red-600');
+    const activePeriodEl = document.getElementById('activePeriod');
+    if (activePeriodEl) {
+        if (activeCutOff) {
+            const periodText = `${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`;
+            activePeriodEl.textContent = periodText;
+            activePeriodEl.classList.remove('text-red-600');
+        } else {
+            activePeriodEl.textContent = 'Tidak ada periode aktif';
+            activePeriodEl.classList.add('text-red-600');
+        }
     }
     
     // Filter lembur for current user and period
     const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
     const periodLembur = filterLemburByPeriod(userLembur, activeCutOff);
+    
+    console.log('📊 User lembur data:', {
+        total: userLembur.length,
+        inPeriod: periodLembur.length
+    });
     
     // Calculate totals
     let totalHours = 0;
@@ -402,22 +470,37 @@ function renderKaryawanDashboard() {
     });
     
     // Display stats
-    document.getElementById('totalHours').textContent = totalHours;
-    document.getElementById('totalInsentif').textContent = formatCurrency(totalInsentif);
+    const totalHoursEl = document.getElementById('totalHours');
+    const totalInsentifEl = document.getElementById('totalInsentif');
+    if (totalHoursEl) totalHoursEl.textContent = totalHours;
+    if (totalInsentifEl) totalInsentifEl.textContent = formatCurrency(totalInsentif);
     
     // Render chart
     renderOvertimeChart(periodLembur);
     
     // Render calendar
+    currentCalendarMonth = new Date();
     renderCalendar(periodLembur);
     
     // Render history table
     renderHistoryTable(periodLembur);
+    
+    console.log('✅ Dashboard rendered successfully');
 }
 
 function renderOvertimeChart(lemburData) {
     const ctx = document.getElementById('overtimeChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.log('⚠️ Chart canvas not found');
+        return;
+    }
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.log('⚠️ Chart.js not loaded yet, retrying in 1s...');
+        setTimeout(() => renderOvertimeChart(lemburData), 1000);
+        return;
+    }
     
     // Group by week
     const weekData = {};
@@ -467,6 +550,8 @@ function renderOvertimeChart(lemburData) {
             }
         }
     });
+    
+    console.log('✅ Chart rendered');
 }
 
 function getWeekNumber(date) {
@@ -483,7 +568,10 @@ function renderCalendar(lemburData) {
     const calendarDiv = document.getElementById('calendar');
     const monthTitle = document.getElementById('calendarMonth');
     
-    if (!calendarDiv || !monthTitle) return;
+    if (!calendarDiv || !monthTitle) {
+        console.log('⚠️ Calendar elements not found');
+        return;
+    }
     
     const year = currentCalendarMonth.getFullYear();
     const month = currentCalendarMonth.getMonth();
@@ -549,6 +637,7 @@ function renderCalendar(lemburData) {
     }
     
     calendarDiv.innerHTML = html;
+    console.log('✅ Calendar rendered');
 }
 
 function changeMonth(delta) {
@@ -560,9 +649,11 @@ function changeMonth(delta) {
 
 function renderHistoryTable(lemburData) {
     const tbody = document.getElementById('historyTable');
-    if (!tbody) return;
+    if (!tbody) {
+        console.log('⚠️ History table not found');
+        return;
+    }
     
-    // Check if no data
     if (!lemburData || lemburData.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -572,7 +663,7 @@ function renderHistoryTable(lemburData) {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         <p class="text-lg font-medium">Belum ada data lembur</p>
-                        <p class="text-sm text-gray-400 mt-1">Data lembur Anda akan muncul di sini setelah ada input lembur</p>
+                        <p class="text-sm text-gray-400 mt-1">Data lembur Anda akan muncul di sini</p>
                     </div>
                 </td>
             </tr>
@@ -580,7 +671,6 @@ function renderHistoryTable(lemburData) {
         return;
     }
     
-    // Sort by date descending
     const sortedData = [...lemburData].sort((a, b) => 
         new Date(b.tanggal) - new Date(a.tanggal)
     );
@@ -605,10 +695,11 @@ function renderHistoryTable(lemburData) {
             </tr>
         `;
     }).join('');
+    
+    console.log('✅ History table rendered:', sortedData.length, 'rows');
 }
 
 function setupKaryawanEventListeners() {
-    // Change password form
     const changePasswordForm = document.getElementById('changePasswordForm');
     if (changePasswordForm) {
         changePasswordForm.addEventListener('submit', async (e) => {
@@ -627,7 +718,6 @@ function setupKaryawanEventListeners() {
                 return;
             }
             
-            // Update password in localStorage
             const updatedKaryawan = allKaryawan.map(k => {
                 if (k.nik === currentUser.nik) {
                     return { ...k, password: newPassword };
@@ -638,9 +728,8 @@ function setupKaryawanEventListeners() {
             allKaryawan = updatedKaryawan;
             saveToLocalStorage('karyawan', allKaryawan);
             
-            showAlert('Password berhasil diubah! Silakan catat password baru Anda. PENTING: Perubahan password hanya tersimpan di browser ini. Untuk perubahan permanen, hubungi admin untuk update di Google Sheets.', 'warning');
+            showAlert('Password berhasil diubah! PENTING: Untuk perubahan permanen, update di Google Sheets.', 'warning');
             
-            // Clear form
             document.getElementById('newPassword').value = '';
             document.getElementById('confirmPassword').value = '';
         });
@@ -667,7 +756,6 @@ function downloadReport() {
     
     csv += `\nTotal,,,${totalHours},${totalInsentif}`;
     
-    // Download
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -682,6 +770,8 @@ function downloadReport() {
 // ============================================
 
 async function initAdminDashboard() {
+    console.log('🚀 Initializing Admin Dashboard...');
+    
     if (!checkAuth() || currentUser.role !== 'admin') {
         window.location.href = 'index.html';
         return;
@@ -697,29 +787,32 @@ async function initAdminDashboard() {
         allLembur = cachedLembur;
         allCutOff = cachedCutOff;
         activeCutOff = allCutOff.find(c => c.status === 'Aktif');
+        console.log('✅ Loaded from cache');
+        renderAdminDashboard();
     }
     
     // Refresh data in background
-    loadAllData().then(() => {
-        renderAdminDashboard();
+    loadAllData().then((success) => {
+        if (success) {
+            console.log('✅ Data refreshed from Google Sheets');
+            renderAdminDashboard();
+        }
     });
-    
-    // Render with cached data
-    renderAdminDashboard();
     
     // Setup event listeners
     setupAdminEventListeners();
 }
 
 function renderAdminDashboard() {
+    console.log('🎨 Rendering Admin Dashboard...');
     renderOverviewTab();
     renderKaryawanTab();
     renderLemburTab();
     renderCutOffTab();
+    console.log('✅ Admin dashboard rendered');
 }
 
 function renderOverviewTab() {
-    // Calculate stats
     const periodLembur = filterLemburByPeriod(allLembur, activeCutOff);
     
     let totalJam = 0;
@@ -733,23 +826,28 @@ function renderOverviewTab() {
         totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, level);
     });
     
-    // Update stats
-    document.getElementById('totalKaryawan').textContent = allKaryawan.length;
-    document.getElementById('totalRecords').textContent = periodLembur.length;
-    document.getElementById('totalJam').textContent = totalJam;
-    document.getElementById('totalInsentifAdmin').textContent = formatCurrency(totalInsentif);
+    const totalKaryawanEl = document.getElementById('totalKaryawan');
+    const totalRecordsEl = document.getElementById('totalRecords');
+    const totalJamEl = document.getElementById('totalJam');
+    const totalInsentifEl = document.getElementById('totalInsentifAdmin');
     
-    // Display active period
+    if (totalKaryawanEl) totalKaryawanEl.textContent = allKaryawan.length;
+    if (totalRecordsEl) totalRecordsEl.textContent = periodLembur.length;
+    if (totalJamEl) totalJamEl.textContent = totalJam;
+    if (totalInsentifEl) totalInsentifEl.textContent = formatCurrency(totalInsentif);
+    
     const periodElement = document.getElementById('activePeriodAdmin');
-    if (activeCutOff) {
-        const periodText = `${activeCutOff.bulan}: ${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`;
-        periodElement.textContent = periodText;
-        periodElement.classList.remove('text-red-600');
-        periodElement.classList.add('text-indigo-600');
-    } else {
-        periodElement.textContent = 'Tidak ada periode aktif. Silakan set periode aktif di sheet CutOff.';
-        periodElement.classList.remove('text-indigo-600');
-        periodElement.classList.add('text-red-600');
+    if (periodElement) {
+        if (activeCutOff) {
+            const periodText = `${activeCutOff.bulan}: ${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`;
+            periodElement.textContent = periodText;
+            periodElement.classList.remove('text-red-600');
+            periodElement.classList.add('text-indigo-600');
+        } else {
+            periodElement.textContent = 'Tidak ada periode aktif. Silakan set periode aktif.';
+            periodElement.classList.remove('text-indigo-600');
+            periodElement.classList.add('text-red-600');
+        }
     }
 }
 
@@ -789,7 +887,6 @@ function renderLemburTab() {
     
     const periodLembur = filterLemburByPeriod(allLembur, activeCutOff);
     
-    // Check if no data
     if (!periodLembur || periodLembur.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -804,7 +901,8 @@ function renderLemburTab() {
                 </td>
             </tr>
         `;
-        document.getElementById('recordCount').textContent = '0';
+        const recordCount = document.getElementById('recordCount');
+        if (recordCount) recordCount.textContent = '0';
         return;
     }
     
@@ -836,7 +934,8 @@ function renderLemburTab() {
         `;
     }).join('');
     
-    document.getElementById('recordCount').textContent = periodLembur.length;
+    const recordCount = document.getElementById('recordCount');
+    if (recordCount) recordCount.textContent = periodLembur.length;
 }
 
 function renderCutOffTab() {
@@ -857,17 +956,9 @@ function renderCutOffTab() {
                     ${c.status || '-'}
                 </span>
             </td>
-            <td class="px-4 py-3 text-sm space-x-2">
-                ${c.status !== 'Aktif' ? `
-                    <button onclick="setActiveCutOff(${index})" class="text-green-600 hover:text-green-800 font-medium text-xs">
-                        Set Aktif
-                    </button>
-                ` : ''}
-                <button onclick="showCutOffModal(true, allCutOff[${index}])" class="text-indigo-600 hover:text-indigo-800 font-medium text-xs">
-                    Edit
-                </button>
-                <button onclick="deleteCutOff(${index})" class="text-red-600 hover:text-red-800 font-medium text-xs">
-                    Hapus
+            <td class="px-4 py-3 text-sm">
+                <button onclick="alert('Feature coming soon')" class="text-indigo-600 hover:text-indigo-800 font-medium text-xs">
+                    Actions
                 </button>
             </td>
         </tr>
@@ -875,7 +966,6 @@ function renderCutOffTab() {
 }
 
 function setupAdminEventListeners() {
-    // Search karyawan
     const searchKaryawan = document.getElementById('searchKaryawan');
     if (searchKaryawan) {
         searchKaryawan.addEventListener('input', (e) => {
@@ -912,115 +1002,29 @@ function setupAdminEventListeners() {
             `).join('');
         });
     }
-    
-    // Search and filter lembur
-    const searchLembur = document.getElementById('searchLembur');
-    const filterDate = document.getElementById('filterDate');
-    
-    function filterLemburData() {
-        let filtered = filterLemburByPeriod(allLembur, activeCutOff);
-        
-        const searchQuery = searchLembur?.value.toLowerCase() || '';
-        if (searchQuery) {
-            filtered = filtered.filter(l => 
-                l.nik.toLowerCase().includes(searchQuery) || 
-                l.nama.toLowerCase().includes(searchQuery)
-            );
-        }
-        
-        const dateFilter = filterDate?.value || '';
-        if (dateFilter) {
-            filtered = filtered.filter(l => l.tanggal === dateFilter);
-        }
-        
-        const tbody = document.getElementById('lemburTable');
-        tbody.innerHTML = filtered.map((l, index) => {
-            const karyawan = allKaryawan.find(k => k.nik === l.nik);
-            const level = karyawan ? karyawan.level : 'staff';
-            const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, level);
-            
-            return `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-3 py-3 text-sm">${index + 1}</td>
-                    <td class="px-3 py-3 text-sm">${formatDate(l.tanggal)}</td>
-                    <td class="px-3 py-3 text-sm font-medium">${l.nik}</td>
-                    <td class="px-3 py-3 text-sm">${l.nama}</td>
-                    <td class="px-3 py-3 text-sm">${l.jabatan}</td>
-                    <td class="px-3 py-3 text-sm">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium ${
-                            l.jenisLembur.toLowerCase().includes('libur') 
-                                ? 'bg-red-100 text-red-800' 
-                                : 'bg-blue-100 text-blue-800'
-                        }">
-                            ${l.jenisLembur}
-                        </span>
-                    </td>
-                    <td class="px-3 py-3 text-sm font-semibold">${l.jamLembur}</td>
-                    <td class="px-3 py-3 text-sm font-semibold text-green-600">${formatCurrency(insentif)}</td>
-                    <td class="px-3 py-3 text-sm text-gray-600">${l.keterangan}</td>
-                </tr>
-            `;
-        }).join('');
-        
-        document.getElementById('recordCount').textContent = filtered.length;
-    }
-    
-    if (searchLembur) {
-        searchLembur.addEventListener('input', filterLemburData);
-    }
-    
-    if (filterDate) {
-        filterDate.addEventListener('change', filterLemburData);
-    }
 }
 
 function switchTab(tabName) {
-    // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.add('hidden');
     });
     
-    // Remove active class from all buttons
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.remove('border-indigo-600', 'text-indigo-600');
         btn.classList.add('text-gray-500');
     });
     
-    // Show selected tab
-    document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+    const selectedTab = document.getElementById(`${tabName}-tab`);
+    if (selectedTab) {
+        selectedTab.classList.remove('hidden');
+    }
     
-    // Add active class to selected button
     event.target.classList.add('border-indigo-600', 'text-indigo-600');
     event.target.classList.remove('text-gray-500');
 }
 
 function viewKaryawanDetail(nik) {
-    const karyawan = allKaryawan.find(k => k.nik === nik);
-    const lemburData = allLembur.filter(l => l.nik === nik);
-    const periodLembur = filterLemburByPeriod(lemburData, activeCutOff);
-    
-    let totalJam = 0;
-    let totalInsentif = 0;
-    
-    periodLembur.forEach(l => {
-        totalJam += parseJamLembur(l.jamLembur);
-        totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
-    });
-    
-    const message = `
-        <div class="text-left">
-            <h3 class="font-bold text-lg mb-2">${karyawan.nama}</h3>
-            <p><strong>NIK:</strong> ${karyawan.nik}</p>
-            <p><strong>Jabatan:</strong> ${karyawan.jabatan}</p>
-            <p><strong>Level:</strong> ${karyawan.level}</p>
-            <hr class="my-3">
-            <p><strong>Total Jam (Periode Aktif):</strong> ${totalJam} jam</p>
-            <p><strong>Total Insentif:</strong> ${formatCurrency(totalInsentif)}</p>
-            <p><strong>Total Records:</strong> ${periodLembur.length}</p>
-        </div>
-    `;
-    
-    alert(message);
+    alert(`Detail for NIK: ${nik}\nFeature will be enhanced in admin-features.js`);
 }
 
 function exportToExcel() {
@@ -1036,7 +1040,6 @@ function exportToExcel() {
         csv += `${index + 1},${l.tanggal},${l.nik},${l.nama},${l.jabatan},${l.jenisLembur},${parseJamLembur(l.jamLembur)},${insentif},${l.keterangan}\n`;
     });
     
-    // Download
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1045,3 +1048,5 @@ function exportToExcel() {
     a.click();
     window.URL.revokeObjectURL(url);
 }
+
+console.log('✅ app.js loaded successfully');
