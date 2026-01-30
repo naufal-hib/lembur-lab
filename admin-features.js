@@ -155,26 +155,32 @@ function renderAdminCalendarView() {
     let calendarHtml = `
         <div class="bg-white rounded-xl shadow-lg p-6">
             ${periodSelectorHtml}
-            <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center justify-between mb-4">
                 <h3 class="text-2xl font-bold text-gray-800 flex items-center">
                     <svg class="w-7 h-7 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
                     Kalender Lembur Semua Karyawan
                 </h3>
-                <div class="flex space-x-6 text-sm">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-10 h-10 bg-red-500 border-2 border-red-700 rounded shadow flex items-center justify-center text-white font-extrabold">7</div>
-                        <span class="text-gray-700 font-semibold">Hari Libur (Merah + Angka Jam)</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <div class="w-10 h-10 bg-emerald-100 border-2 border-emerald-400 rounded flex items-center justify-center text-gray-900 font-extrabold">3</div>
-                        <span class="text-gray-700 font-semibold">Hari Kerja (Hijau + Angka Jam)</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <div class="w-10 h-10 bg-gray-50 border border-gray-300 rounded"></div>
-                        <span class="text-gray-700 font-semibold">Tidak Ada Lembur</span>
-                    </div>
+                <button onclick="exportCalendarPDF()" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition shadow-md hover:shadow-lg transform hover:scale-105 flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>Export PDF</span>
+                </button>
+            </div>
+            <div class="flex justify-center space-x-8 text-sm mb-6">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-red-500 border-2 border-red-700 rounded shadow flex items-center justify-center text-white font-bold text-xs">7</div>
+                    <span class="text-gray-700 font-medium">Hari Libur</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-emerald-100 border-2 border-emerald-400 rounded flex items-center justify-center text-gray-900 font-bold text-xs">3</div>
+                    <span class="text-gray-700 font-medium">Hari Kerja</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gray-50 border border-gray-300 rounded"></div>
+                    <span class="text-gray-700 font-medium">Tidak Ada Lembur</span>
                 </div>
             </div>
             
@@ -1250,6 +1256,147 @@ function switchTab(tabName) {
 
     event.target.classList.add('border-indigo-600', 'text-indigo-600', 'bg-indigo-50');
     event.target.classList.remove('text-gray-500', 'border-transparent');
+}
+
+// ============================================
+// EXPORT CALENDAR TO PDF
+// ============================================
+async function exportCalendarPDF() {
+    const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
+    
+    if (!displayPeriod) {
+        showAlert('Tidak ada periode aktif untuk diexport', 'warning');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for wide table
+        
+        // Title
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('KALENDER LEMBUR KARYAWAN', doc.internal.pageSize.width / 2, 15, { align: 'center' });
+        
+        // Period info
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Periode: ${displayPeriod.bulan} (${formatDate(displayPeriod.tanggalMulai)} - ${formatDate(displayPeriod.tanggalAkhir)})`, doc.internal.pageSize.width / 2, 22, { align: 'center' });
+        
+        // Get date range
+        const startDate = new Date(displayPeriod.tanggalMulai);
+        const endDate = new Date(displayPeriod.tanggalAkhir);
+        
+        // Calculate days in period
+        const days = [];
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            days.push(new Date(d));
+        }
+        
+        // Group lembur by NIK and date
+        const lemburByNikDate = {};
+        allLembur.forEach(l => {
+            const lemburDate = new Date(l.tanggal);
+            if (lemburDate >= startDate && lemburDate <= endDate) {
+                if (!lemburByNikDate[l.nik]) {
+                    lemburByNikDate[l.nik] = {};
+                }
+                const dateKey = l.tanggal;
+                if (!lemburByNikDate[l.nik][dateKey]) {
+                    lemburByNikDate[l.nik][dateKey] = [];
+                }
+                lemburByNikDate[l.nik][dateKey].push(l);
+            }
+        });
+        
+        // Prepare table data
+        const headers = ['No', 'Nama', 'NIK', 'Posisi', ...days.map(d => d.getDate())];
+        
+        const tableData = allKaryawan.map((karyawan, index) => {
+            const row = [
+                index + 1,
+                karyawan.nama.substring(0, 20), // Truncate long names
+                karyawan.nik,
+                karyawan.jabatan.substring(0, 15) // Truncate long positions
+            ];
+            
+            days.forEach(day => {
+                const dateKey = day.toISOString().split('T')[0];
+                const lemburRecords = lemburByNikDate[karyawan.nik] ? lemburByNikDate[karyawan.nik][dateKey] : null;
+                
+                if (lemburRecords && lemburRecords.length > 0) {
+                    const totalJam = lemburRecords.reduce((sum, l) => sum + parseJamLembur(l.jamLembur), 0);
+                    row.push(totalJam.toString());
+                } else {
+                    row.push('-');
+                }
+            });
+            
+            return row;
+        });
+        
+        // Add table
+        doc.autoTable({
+            startY: 28,
+            head: [headers],
+            body: tableData,
+            theme: 'grid',
+            styles: { 
+                fontSize: 7,
+                cellPadding: 1.5,
+                overflow: 'linebreak'
+            },
+            headStyles: { 
+                fillColor: [79, 70, 229],
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 10, halign: 'center' },
+                1: { cellWidth: 35 },
+                2: { cellWidth: 20, halign: 'center' },
+                3: { cellWidth: 30 }
+                // Date columns will auto-size
+            },
+            didDrawCell: function(data) {
+                // Color cells with overtime
+                if (data.section === 'body' && data.column.index > 3) {
+                    const cellValue = data.cell.raw;
+                    if (cellValue && cellValue !== '-') {
+                        // Check if it's holiday overtime (you could enhance this)
+                        doc.setFillColor(220, 252, 231); // Light green
+                        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(cellValue, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center', baseline: 'middle' });
+                    }
+                }
+            }
+        });
+        
+        // Footer
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'italic');
+            doc.text(`Halaman ${i} dari ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+            doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 15, doc.internal.pageSize.height - 10);
+        }
+        
+        // Save PDF
+        doc.save(`Kalender_Lembur_${displayPeriod.bulan.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+        
+        hideLoading();
+        showAlert('✅ PDF berhasil diexport!', 'success');
+        
+    } catch (error) {
+        hideLoading();
+        console.error('Error exporting PDF:', error);
+        showAlert('❌ Gagal export PDF: ' + error.message, 'error');
+    }
 }
 
 console.log('✅ admin-features.js loaded');
