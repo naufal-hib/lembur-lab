@@ -1,10 +1,10 @@
 // ============================================
-// ADMIN FEATURES - FULL VERSION
-// Import Excel, Manage Cut-Off, Export PDF, Modal Detail
+// ADMIN FEATURES - FIXED VERSION
+// Tidak overwrite fungsi existing di app.js
 // ============================================
 
 // ============================================
-// MODAL EMPLOYEE DETAIL
+// MODAL EMPLOYEE DETAIL (NEW)
 // ============================================
 
 function viewKaryawanDetail(nik) {
@@ -89,7 +89,7 @@ function viewKaryawanDetail(nik) {
                         <p class="text-sm text-gray-600 mt-1">Total Jam</p>
                     </div>
                     <div class="text-center">
-                        <p class="text-3xl font-bold text-green-600">${formatCurrency(totalInsentif)}</p>
+                        <p class="text-2xl font-bold text-green-600">${formatCurrency(totalInsentif)}</p>
                         <p class="text-sm text-gray-600 mt-1">Total Insentif</p>
                     </div>
                     <div class="text-center">
@@ -179,11 +179,14 @@ function viewKaryawanDetail(nik) {
 }
 
 function closeEmployeeModal() {
-    document.getElementById('employeeModal').style.display = 'none';
+    const modal = document.getElementById('employeeModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // ============================================
-// IMPORT EXCEL FEATURE
+// IMPORT EXCEL FEATURE (NEW)
 // ============================================
 
 function showImportModal() {
@@ -198,13 +201,10 @@ function closeImportModal() {
     if (modal) {
         modal.style.display = 'none';
     }
-    // Reset form
     const fileInput = document.getElementById('excelFileInput');
     if (fileInput) fileInput.value = '';
-    
     const preview = document.getElementById('importPreview');
     if (preview) preview.innerHTML = '';
-    
     const importBtn = document.getElementById('importBtn');
     if (importBtn) importBtn.disabled = true;
 }
@@ -217,8 +217,12 @@ async function handleExcelUpload(event) {
     
     try {
         const data = await readExcelFile(file);
+        console.log('Excel data loaded:', data.length, 'rows');
         displayImportPreview(data);
-        document.getElementById('importBtn').disabled = false;
+        const importBtn = document.getElementById('importBtn');
+        if (importBtn) {
+            importBtn.disabled = false;
+        }
         hideLoading();
     } catch (error) {
         hideLoading();
@@ -236,29 +240,33 @@ async function readExcelFile(file) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 
-                // Read first sheet
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // Convert to JSON - skip first 3 rows (title, blank, header that becomes content)
-                // Row 4 is blank, so actual data starts from row 5
+                // Read with header at row 3 (0-indexed = 2)
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-                    range: 3,  // Start from row 4 (0-indexed), which has the actual headers
-                    defval: ''  // Default value for empty cells
+                    range: 3,
+                    defval: ''
                 });
                 
                 // Filter out empty rows
                 const filteredData = jsonData.filter(row => {
-                    return row.NIK && row.TANGGAL && (row['JAM LEMBUR'] || row['JAM LEMBUR ']);
+                    const nik = row.NIK || row.nik;
+                    const tanggal = row.TANGGAL || row.Tanggal;
+                    const jamLembur = row['JAM LEMBUR'] || row['JAM LEMBUR '] || row['Jam Lembur'];
+                    return nik && tanggal && jamLembur;
                 });
                 
+                console.log('Filtered data:', filteredData.length, 'rows');
                 resolve(filteredData);
             } catch (error) {
+                console.error('Error parsing Excel:', error);
                 reject(error);
             }
         };
         
         reader.onerror = function(error) {
+            console.error('FileReader error:', error);
             reject(error);
         };
         
@@ -275,8 +283,10 @@ function displayImportPreview(data) {
         return;
     }
     
-    // Check for duplicates
     const { duplicates, newRecords } = detectDuplicates(data);
+    
+    console.log('Duplicates:', duplicates.length);
+    console.log('New records:', newRecords.length);
     
     preview.innerHTML = `
         <div class="space-y-4">
@@ -293,9 +303,12 @@ function displayImportPreview(data) {
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p class="text-yellow-800 font-semibold text-sm mb-2">Data Duplikat (10 pertama):</p>
                     <div class="max-h-40 overflow-y-auto text-xs space-y-1">
-                        ${duplicates.slice(0, 10).map(d => `
-                            <p class="text-yellow-700">• NIK ${d.NIK} - ${formatExcelDate(d.TANGGAL)} - ${d['JAM LEMBUR'] || d['JAM LEMBUR '] || '0 Jam'}</p>
-                        `).join('')}
+                        ${duplicates.slice(0, 10).map(d => {
+                            const nik = d.NIK || d.nik;
+                            const tanggal = d.TANGGAL || d.Tanggal;
+                            const jam = d['JAM LEMBUR'] || d['JAM LEMBUR '] || d['Jam Lembur'];
+                            return `<p class="text-yellow-700">• NIK ${nik} - ${formatExcelDate(tanggal)} - ${jam}</p>`;
+                        }).join('')}
                         ${duplicates.length > 10 ? `<p class="text-yellow-600 italic">...dan ${duplicates.length - 10} lagi</p>` : ''}
                     </div>
                 </div>
@@ -315,15 +328,22 @@ function displayImportPreview(data) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
-                            ${newRecords.slice(0, 5).map(row => `
-                                <tr>
-                                    <td class="px-2 py-1">${row.NIK || '-'}</td>
-                                    <td class="px-2 py-1">${row['NAMA LENGKAP'] || '-'}</td>
-                                    <td class="px-2 py-1">${formatExcelDate(row.TANGGAL)}</td>
-                                    <td class="px-2 py-1">${row['JAM LEMBUR'] || row['JAM LEMBUR '] || '0 Jam'}</td>
-                                    <td class="px-2 py-1">${row['JENIS LEMBUR'] || 'Hari Kerja'}</td>
-                                </tr>
-                            `).join('')}
+                            ${newRecords.slice(0, 5).map(row => {
+                                const nik = row.NIK || row.nik;
+                                const nama = row['NAMA LENGKAP'] || row['Nama Lengkap'] || '-';
+                                const tanggal = row.TANGGAL || row.Tanggal;
+                                const jam = row['JAM LEMBUR'] || row['JAM LEMBUR '] || row['Jam Lembur'];
+                                const jenis = row['JENIS LEMBUR'] || row['Jenis Lembur'] || 'Hari Kerja';
+                                return `
+                                    <tr>
+                                        <td class="px-2 py-1">${nik}</td>
+                                        <td class="px-2 py-1">${nama}</td>
+                                        <td class="px-2 py-1">${formatExcelDate(tanggal)}</td>
+                                        <td class="px-2 py-1">${jam}</td>
+                                        <td class="px-2 py-1">${jenis}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -331,7 +351,6 @@ function displayImportPreview(data) {
         </div>
     `;
     
-    // Store data for import
     window.pendingImportData = newRecords;
 }
 
@@ -340,12 +359,12 @@ function detectDuplicates(newData) {
     const newRecords = [];
     
     newData.forEach(row => {
-        const nik = String(row.NIK || '').trim();
-        const tanggal = formatExcelDate(row.TANGGAL);
-        const jamLembur = row['JAM LEMBUR'] || row['JAM LEMBUR '] || '0 Jam';
+        const nik = String(row.NIK || row.nik || '').trim();
+        const tanggal = formatExcelDate(row.TANGGAL || row.Tanggal);
+        const jamLembur = row['JAM LEMBUR'] || row['JAM LEMBUR '] || row['Jam Lembur'] || '0 Jam';
         
         if (!nik || !tanggal) {
-            return; // Skip invalid rows
+            return;
         }
         
         const isDuplicate = allLembur.some(existing => {
@@ -367,7 +386,6 @@ function detectDuplicates(newData) {
 function formatExcelDate(excelDate) {
     if (!excelDate) return '';
     
-    // If already a Date object or string in YYYY-MM-DD format
     if (excelDate instanceof Date) {
         const year = excelDate.getFullYear();
         const month = String(excelDate.getMonth() + 1).padStart(2, '0');
@@ -375,7 +393,6 @@ function formatExcelDate(excelDate) {
         return `${year}-${month}-${day}`;
     }
     
-    // If Excel date serial number
     if (typeof excelDate === 'number') {
         const date = new Date((excelDate - 25569) * 86400 * 1000);
         const year = date.getFullYear();
@@ -384,7 +401,6 @@ function formatExcelDate(excelDate) {
         return `${year}-${month}-${day}`;
     }
     
-    // If string in format DD/MM/YYYY
     if (typeof excelDate === 'string' && excelDate.includes('/')) {
         const parts = excelDate.split('/');
         if (parts.length === 3) {
@@ -395,7 +411,6 @@ function formatExcelDate(excelDate) {
         }
     }
     
-    // If string already in YYYY-MM-DD format
     if (typeof excelDate === 'string' && excelDate.includes('-')) {
         return excelDate;
     }
@@ -404,45 +419,70 @@ function formatExcelDate(excelDate) {
 }
 
 async function importData() {
+    console.log('importData() called');
+    
     if (!window.pendingImportData || window.pendingImportData.length === 0) {
         showAlert('Tidak ada data untuk diimport', 'warning');
         return;
     }
     
+    console.log('Processing', window.pendingImportData.length, 'records');
+    
     showLoading();
     
     try {
-        // Process data
-        const processedData = window.pendingImportData.map((row, index) => ({
-            no: String(allLembur.length + index + 1),
-            tanggal: formatExcelDate(row.TANGGAL),
-            nik: String(row.NIK || '').trim(),
-            nama: row['NAMA LENGKAP'] || row['NAMA'] || '',
-            departemen: row.DEPARTEMEN || 'LABORATORIUM',
-            jabatan: row.JABATAN || '',
-            jenisLembur: row['JENIS LEMBUR'] || 'Hari Kerja',
-            jamLembur: row['JAM LEMBUR'] || row['JAM LEMBUR '] || '0 Jam',
-            insentifKopi: row['INSENTIF KOPI'] || 'Tidak',
-            keterangan: row.KETERANGAN || '',
-            pengecekan: row.PENGECEKAN || 'Import'
-        }));
+        const processedData = window.pendingImportData.map((row, index) => {
+            const nik = String(row.NIK || row.nik || '').trim();
+            const tanggal = formatExcelDate(row.TANGGAL || row.Tanggal);
+            const nama = row['NAMA LENGKAP'] || row['Nama Lengkap'] || row.NAMA || row.Nama || '';
+            const departemen = row.DEPARTEMEN || row.Departemen || 'LABORATORIUM';
+            const jabatan = row.JABATAN || row.Jabatan || '';
+            const jenisLembur = row['JENIS LEMBUR'] || row['Jenis Lembur'] || 'Hari Kerja';
+            const jamLembur = row['JAM LEMBUR'] || row['JAM LEMBUR '] || row['Jam Lembur'] || '0 Jam';
+            const insentifKopi = row['INSENTIF KOPI'] || row['Insentif Kopi'] || 'Tidak';
+            const keterangan = row.KETERANGAN || row.Keterangan || '';
+            const pengecekan = row.PENGECEKAN || row.Pengecekan || 'Import';
+            
+            return {
+                no: String(allLembur.length + index + 1),
+                tanggal,
+                nik,
+                nama,
+                departemen,
+                jabatan,
+                jenisLembur,
+                jamLembur,
+                insentifKopi,
+                keterangan,
+                pengecekan
+            };
+        });
         
-        // Add to allLembur
+        console.log('Processed data:', processedData.length, 'records');
+        
         allLembur = [...allLembur, ...processedData];
         
-        // Save to localStorage
         saveToLocalStorage('lembur', allLembur);
         
+        console.log('Data saved to localStorage. Total records:', allLembur.length);
+        
         hideLoading();
+        
         showAlert(`✅ Berhasil mengimport ${processedData.length} data baru!`, 'success');
         
-        // Close modal
         closeImportModal();
         
-        // Refresh dashboard
-        renderAdminDashboard();
+        // Refresh admin dashboard
+        if (typeof renderAdminDashboard === 'function') {
+            renderAdminDashboard();
+        }
+        if (typeof renderLemburTab === 'function') {
+            renderLemburTab();
+        }
+        if (typeof renderOverviewTab === 'function') {
+            renderOverviewTab();
+        }
         
-        // Show instruction to update Google Sheets
         setTimeout(() => {
             showAlert('⚠️ PENTING: Data sudah tersimpan di sistem. Jangan lupa update Google Sheets agar data permanen!', 'warning');
         }, 2000);
@@ -455,7 +495,7 @@ async function importData() {
 }
 
 // ============================================
-// MANAGE CUT-OFF PERIOD FEATURE
+// MANAGE CUT-OFF PERIOD (NEW)
 // ============================================
 
 function showCutOffModal(edit = false, cutoff = null) {
@@ -484,7 +524,11 @@ function closeCutOffModal() {
     if (modal) {
         modal.style.display = 'none';
     }
-    document.getElementById('cutoffForm').reset();
+    const form = document.getElementById('cutoffForm');
+    if (form) {
+        form.reset();
+        delete form.dataset.editIndex;
+    }
 }
 
 async function saveCutOff(event) {
@@ -496,7 +540,6 @@ async function saveCutOff(event) {
     const tanggalAkhir = document.getElementById('cutoffEnd').value;
     const status = document.getElementById('cutoffStatus').value;
     
-    // Validate
     if (!bulan || !tanggalMulai || !tanggalAkhir) {
         showAlert('Semua field harus diisi!', 'error');
         return;
@@ -514,16 +557,13 @@ async function saveCutOff(event) {
         status
     };
     
-    // If editing
     if (form.dataset.editIndex !== undefined) {
         const index = parseInt(form.dataset.editIndex);
         allCutOff[index] = newCutOff;
     } else {
-        // Adding new
         allCutOff.push(newCutOff);
     }
     
-    // If set as active, deactivate others
     if (status === 'Aktif') {
         allCutOff.forEach((c) => {
             if (c !== newCutOff) {
@@ -533,17 +573,19 @@ async function saveCutOff(event) {
         activeCutOff = newCutOff;
     }
     
-    // Save to localStorage
     saveToLocalStorage('cutoff', allCutOff);
     
     showAlert('✅ Periode cut-off berhasil disimpan!', 'success');
     closeCutOffModal();
     
     // Refresh display
-    renderCutOffTab();
-    renderOverviewTab();
+    if (typeof renderCutOffTab === 'function') {
+        renderCutOffTab();
+    }
+    if (typeof renderOverviewTab === 'function') {
+        renderOverviewTab();
+    }
     
-    // Show instruction
     setTimeout(() => {
         showAlert('⚠️ PENTING: Update juga di Google Sheets agar data permanen!', 'warning');
     }, 2000);
@@ -555,32 +597,42 @@ function deleteCutOff(index) {
     allCutOff.splice(index, 1);
     saveToLocalStorage('cutoff', allCutOff);
     
-    // Update active cut-off
     activeCutOff = allCutOff.find(c => c.status === 'Aktif');
     
     showAlert('✅ Periode cut-off berhasil dihapus!', 'success');
-    renderCutOffTab();
-    renderOverviewTab();
+    
+    if (typeof renderCutOffTab === 'function') {
+        renderCutOffTab();
+    }
+    if (typeof renderOverviewTab === 'function') {
+        renderOverviewTab();
+    }
 }
 
 function setActiveCutOff(index) {
-    // Deactivate all
     allCutOff.forEach(c => c.status = '');
     
-    // Activate selected
     allCutOff[index].status = 'Aktif';
     activeCutOff = allCutOff[index];
     
     saveToLocalStorage('cutoff', allCutOff);
     
     showAlert('✅ Periode cut-off aktif berhasil diubah!', 'success');
-    renderCutOffTab();
-    renderOverviewTab();
-    renderLemburTab();
+    
+    if (typeof renderCutOffTab === 'function') {
+        renderCutOffTab();
+    }
+    if (typeof renderOverviewTab === 'function') {
+        renderOverviewTab();
+    }
+    if (typeof renderLemburTab === 'function') {
+        renderLemburTab();
+    }
 }
 
-// Update renderCutOffTab to include action buttons
-function renderCutOffTab() {
+// Override renderCutOffTab to add action buttons
+const originalRenderCutOffTab = window.renderCutOffTab;
+window.renderCutOffTab = function() {
     const tbody = document.getElementById('cutoffTable');
     if (!tbody) return;
     
@@ -615,10 +667,10 @@ function renderCutOffTab() {
             </td>
         </tr>
     `).join('');
-}
+};
 
 // ============================================
-// EXPORT PDF FEATURE
+// EXPORT PDF (NEW)
 // ============================================
 
 async function exportKaryawanPDF(nik) {
@@ -631,7 +683,6 @@ async function exportKaryawanPDF(nik) {
     const lemburData = allLembur.filter(l => l.nik === nik);
     const periodLembur = filterLemburByPeriod(lemburData, activeCutOff);
     
-    // Calculate stats
     let totalJam = 0;
     let totalInsentif = 0;
     
@@ -640,23 +691,19 @@ async function exportKaryawanPDF(nik) {
         totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
     });
     
-    // Create PDF
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // Title
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.text('LAPORAN LEMBUR KARYAWAN', 105, 20, { align: 'center' });
     
-    // Periode
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     if (activeCutOff) {
         doc.text(`Periode: ${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`, 105, 28, { align: 'center' });
     }
     
-    // Karyawan Info
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('INFORMASI KARYAWAN', 20, 40);
@@ -668,7 +715,6 @@ async function exportKaryawanPDF(nik) {
     doc.text(`Jabatan: ${karyawan.jabatan}`, 20, 62);
     doc.text(`Level: ${karyawan.level}`, 20, 69);
     
-    // Summary
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('RINGKASAN', 20, 82);
@@ -679,16 +725,12 @@ async function exportKaryawanPDF(nik) {
     doc.text(`Total Insentif: ${formatCurrency(totalInsentif)}`, 20, 97);
     doc.text(`Jumlah Hari Lembur: ${periodLembur.length} hari`, 20, 104);
     
-    // Table
     if (periodLembur.length > 0) {
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('DETAIL LEMBUR', 20, 117);
         
-        // Table headers
         const headers = [['Tanggal', 'Jenis', 'Jam', 'Insentif']];
-        
-        // Table data
         const data = periodLembur.map(l => [
             formatDate(l.tanggal),
             l.jenisLembur,
@@ -706,7 +748,6 @@ async function exportKaryawanPDF(nik) {
         });
     }
     
-    // Footer
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -716,7 +757,6 @@ async function exportKaryawanPDF(nik) {
         doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 20, 290);
     }
     
-    // Save
     doc.save(`Laporan_Lembur_${karyawan.nik}_${karyawan.nama.replace(/\s/g, '_')}.pdf`);
 }
 
@@ -734,19 +774,16 @@ async function exportAllLemburPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape');
         
-        // Title
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
         doc.text('LAPORAN LEMBUR SEMUA KARYAWAN', 148, 20, { align: 'center' });
         
-        // Periode
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         if (activeCutOff) {
             doc.text(`Periode: ${formatDate(activeCutOff.tanggalMulai)} - ${formatDate(activeCutOff.tanggalAkhir)}`, 148, 28, { align: 'center' });
         }
         
-        // Summary
         let totalJam = 0;
         let totalInsentif = 0;
         
@@ -762,9 +799,7 @@ async function exportAllLemburPDF() {
         doc.text(`Total Jam: ${totalJam} jam`, 20, 46);
         doc.text(`Total Insentif: ${formatCurrency(totalInsentif)}`, 20, 52);
         
-        // Table
         const headers = [['No', 'Tanggal', 'NIK', 'Nama', 'Jabatan', 'Jenis', 'Jam', 'Insentif']];
-        
         const data = periodLembur.map((l, index) => {
             const karyawan = allKaryawan.find(k => k.nik === l.nik);
             const level = karyawan ? karyawan.level : 'staff';
@@ -791,7 +826,6 @@ async function exportAllLemburPDF() {
             headStyles: { fillColor: [79, 70, 229], textColor: 255 }
         });
         
-        // Footer
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
@@ -801,7 +835,6 @@ async function exportAllLemburPDF() {
             doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 20, 200);
         }
         
-        // Save
         const filename = `Laporan_Lembur_All_${activeCutOff ? activeCutOff.bulan.replace(/\s/g, '_') : 'All'}.pdf`;
         doc.save(filename);
         
@@ -810,7 +843,6 @@ async function exportAllLemburPDF() {
     }, 100);
 }
 
-// Export CSV untuk lembur (existing function improvement)
 function exportLemburToCSV() {
     const periodLembur = filterLemburByPeriod(allLembur, activeCutOff);
     
@@ -819,7 +851,6 @@ function exportLemburToCSV() {
         return;
     }
     
-    // Prepare CSV data with calculated insentif
     const csvData = periodLembur.map((l, index) => {
         const karyawan = allKaryawan.find(k => k.nik === l.nik);
         const level = karyawan ? karyawan.level : 'staff';
@@ -841,7 +872,6 @@ function exportLemburToCSV() {
         };
     });
     
-    // Convert to CSV
     const headers = Object.keys(csvData[0]);
     let csv = headers.join(',') + '\n';
     
@@ -853,7 +883,6 @@ function exportLemburToCSV() {
         csv += values.join(',') + '\n';
     });
     
-    // Download
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -866,3 +895,5 @@ function exportLemburToCSV() {
     
     showAlert('✅ CSV berhasil diexport!', 'success');
 }
+
+console.log('admin-features.js loaded successfully');
