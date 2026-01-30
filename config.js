@@ -2,36 +2,32 @@
 // KONFIGURASI GOOGLE SHEETS API
 // ============================================
 
-// STEP 1: Ganti dengan Google Sheets ID Anda
-// Cara mendapatkan: Buka Google Sheets, lihat URL:
-// https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit
+// Google Sheets ID dari URL
 const SPREADSHEET_ID = '1Us4RPm72oijMOnevEpnlxeO9g1wtpQ8jD5kmys_cGOk';
 
-// STEP 2: Ganti dengan API Key Anda
-// Cara mendapatkan: Lihat panduan di SETUP-GUIDE.md
+// API Key untuk akses Google Sheets
 const API_KEY = 'AIzaSyBW6vyEQMJ5XoWm6ShpKYn4134aLWfpopQ';
 
 // ============================================
 // KONFIGURASI SHEET NAMES
 // ============================================
-// Pastikan nama sheet di Google Sheets SAMA PERSIS dengan ini
 const SHEET_CONFIG = {
-    KARYAWAN: 'Karyawan',      // Sheet data karyawan
-    LEMBUR: 'Lembur',          // Sheet data lembur
-    CUTOFF: 'CutOff',          // Sheet periode cut-off
-    CONFIG: 'Config'           // Sheet konfigurasi (opsional)
+    KARYAWAN: 'Karyawan',
+    LEMBUR: 'Lembur',
+    CUTOFF: 'CutOff',
+    CONFIG: 'Config'
 };
 
 // ============================================
 // KONFIGURASI ADMIN
 // ============================================
 const ADMIN_CONFIG = {
-    NIK: 'admin',              // NIK untuk login admin
-    PASSWORD: 'admin123'       // Password admin (bisa diubah)
+    NIK: 'admin',
+    PASSWORD: 'admin123'
 };
 
 // ============================================
-// BASE API URL - JANGAN DIUBAH
+// BASE API URL
 // ============================================
 const SHEETS_API_BASE = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}`;
 
@@ -50,19 +46,21 @@ function getBatchGetUrl(ranges) {
 
 // Validate configuration
 function validateConfig() {
-    if (SPREADSHEET_ID === 'GANTI_DENGAN_SPREADSHEET_ID_ANDA') {
+    if (!SPREADSHEET_ID || SPREADSHEET_ID === 'GANTI_DENGAN_SPREADSHEET_ID_ANDA') {
         return {
             valid: false,
-            message: 'SPREADSHEET_ID belum dikonfigurasi! Silakan baca SETUP-GUIDE.md'
+            message: 'SPREADSHEET_ID belum dikonfigurasi!'
         };
     }
     
-    if (API_KEY === 'GANTI_DENGAN_API_KEY_ANDA') {
+    if (!API_KEY || API_KEY === 'GANTI_DENGAN_API_KEY_ANDA') {
         return {
             valid: false,
-            message: 'API_KEY belum dikonfigurasi! Silakan baca SETUP-GUIDE.md'
+            message: 'API_KEY belum dikonfigurasi!'
         };
     }
     
     return { valid: true };
 }
+
+console.log('✅ config.js loaded');
