@@ -155,21 +155,25 @@ function renderAdminCalendarView() {
     let calendarHtml = `
         <div class="bg-white rounded-xl shadow-lg p-6">
             ${periodSelectorHtml}
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <svg class="w-7 h-7 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
                     Kalender Lembur Semua Karyawan
                 </h3>
-                <div class="flex space-x-4 text-xs">
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-red-500 rounded mr-1"></div>
-                        <span class="text-gray-600">Hari Libur</span>
+                <div class="flex space-x-6 text-sm">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 bg-red-500 border-2 border-red-700 rounded shadow flex items-center justify-center text-white font-extrabold">7</div>
+                        <span class="text-gray-700 font-semibold">Hari Libur (Merah + Angka Jam)</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-white border border-gray-300 rounded mr-1 flex items-center justify-center text-[10px]">3</div>
-                        <span class="text-gray-600">Jam Lembur</span>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 bg-emerald-100 border-2 border-emerald-400 rounded flex items-center justify-center text-gray-900 font-extrabold">3</div>
+                        <span class="text-gray-700 font-semibold">Hari Kerja (Hijau + Angka Jam)</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 bg-gray-50 border border-gray-300 rounded"></div>
+                        <span class="text-gray-700 font-semibold">Tidak Ada Lembur</span>
                     </div>
                 </div>
             </div>
@@ -206,12 +210,18 @@ function renderAdminCalendarView() {
                                             const isLibur = lemburRecords.some(l => l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur'));
                                             
                                             return `
-                                                <td class="border border-gray-300 px-1 py-1 text-center ${isLibur ? 'bg-red-500 text-white font-bold' : 'bg-white'}" title="${lemburRecords.map(l => `${l.jenisLembur}: ${l.jamLembur}`).join(', ')}">
-                                                    ${isLibur ? '' : totalJam}
+                                                <td class="border-2 px-3 py-3 text-center font-extrabold text-base ${
+                                                    isLibur 
+                                                        ? 'bg-red-500 text-white border-red-700 shadow-md' 
+                                                        : 'bg-emerald-100 text-gray-900 border-emerald-400'
+                                                }" 
+                                                style="min-width: 50px;"
+                                                title="${lemburRecords.map(l => `${l.jenisLembur}: ${l.jamLembur}`).join('\\n')}">
+                                                    ${totalJam}
                                                 </td>
                                             `;
                                         } else {
-                                            return `<td class="border border-gray-300 px-1 py-1"></td>`;
+                                            return `<td class="border border-gray-300 px-3 py-3 bg-gray-50" style="min-width: 50px;"></td>`;
                                         }
                                     }).join('')}
                                 </tr>
@@ -221,8 +231,21 @@ function renderAdminCalendarView() {
                 </table>
             </div>
             
-            <div class="mt-4 text-sm text-gray-600">
-                <p>💡 <strong>Tips:</strong> Scroll ke kanan untuk melihat tanggal lainnya. Kotak merah = Hari Libur, Angka = Jam Lembur</p>
+            <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-blue-800 mb-1">💡 Cara Baca Kalender:</p>
+                        <ul class="text-sm text-blue-700 space-y-1">
+                            <li>• <strong class="font-bold">Kotak Merah + Angka</strong> = Lembur Hari Libur (angka menunjukkan jumlah jam)</li>
+                            <li>• <strong class="font-bold">Kotak Hijau + Angka</strong> = Lembur Hari Kerja (angka menunjukkan jumlah jam)</li>
+                            <li>• <strong class="font-bold">Kotak Kosong</strong> = Tidak ada lembur di tanggal tersebut</li>
+                            <li>• Scroll ke kanan untuk melihat tanggal lainnya dalam periode</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     `;
