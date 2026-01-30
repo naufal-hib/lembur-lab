@@ -9,6 +9,19 @@ const SPREADSHEET_ID = '1Us4RPm72oijMOnevEpnlxeO9g1wtpQ8jD5kmys_cGOk';
 const API_KEY = 'AIzaSyBW6vyEQMJ5XoWm6ShpKYn4134aLWfpopQ';
 
 // ============================================
+// GOOGLE APPS SCRIPT URL (untuk write access)
+// ============================================
+// CARA SETUP:
+// 1. Buka Google Sheets Anda
+// 2. Extensions > Apps Script
+// 3. Copy paste code dari GoogleAppsScript.js
+// 4. Deploy > New deployment > Web app
+// 5. Execute as: Me
+// 6. Who has access: Anyone
+// 7. Copy URL dan paste di bawah
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxC-Wc_5F8FkCmgAqi-F8jM-kKjq7gVPSCadVmvgK27u_lb6Py-rbIwQtoxnk5JvP55/exec';
+
+// ============================================
 // KONFIGURASI SHEET NAMES
 // ============================================
 const SHEET_CONFIG = {
@@ -61,6 +74,35 @@ function validateConfig() {
     }
     
     return { valid: true };
+}
+
+// Call Google Apps Script
+async function callAppsScript(action, data) {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'GANTI_DENGAN_APPS_SCRIPT_URL_ANDA') {
+        throw new Error('APPS_SCRIPT_URL belum dikonfigurasi! Lihat GoogleAppsScript.js untuk setup.');
+    }
+    
+    try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Important for Apps Script
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: action,
+                ...data
+            })
+        });
+        
+        // Note: no-cors mode doesn't allow reading response
+        // We'll assume success and reload data
+        return { success: true };
+        
+    } catch (error) {
+        console.error('Apps Script error:', error);
+        throw error;
+    }
 }
 
 console.log('✅ config.js loaded');
