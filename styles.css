@@ -32,6 +32,23 @@ body {
     animation: spin 1s linear infinite;
 }
 
+/* Ensure loading overlay is always on top when shown */
+#loading {
+    z-index: 999999 !important;
+    pointer-events: auto;
+}
+
+#loading.hidden {
+    pointer-events: none !important;
+}
+
+/* Ensure form inputs are always clickable */
+input, textarea, select, button {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
