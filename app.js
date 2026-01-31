@@ -397,8 +397,9 @@ function renderKaryawanDashboard() {
     // Filter lembur by selected period
     const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
     
-    // Store all user lembur for calendar (independent)
+    // Store ALL user lembur for calendar (INDEPENDENT from period filter)
     allUserLemburForCalendar = userLembur;
+    console.log('📊 Total user lembur for calendar:', allUserLemburForCalendar.length);
     
     const periodLembur = selectedCutOff ? filterLemburByPeriod(userLembur, selectedCutOff) : userLembur;
 
