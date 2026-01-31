@@ -241,18 +241,29 @@
                         📊 Menampilkan <span id="recordCount" class="font-bold text-indigo-600">0</span> records
                     </p>
                     <div class="overflow-x-auto rounded-lg border border-gray-200">
-                        <table class="w-full">
+                        <table class="w-full" style="table-layout: fixed;">
+                            <colgroup>
+                                <col style="width: 50px;">      <!-- No -->
+                                <col style="width: 100px;">     <!-- Tanggal -->
+                                <col style="width: 80px;">      <!-- NIK -->
+                                <col style="width: 150px;">     <!-- Nama -->
+                                <col style="width: 120px;" class="hidden sm:table-column">  <!-- Jabatan -->
+                                <col style="width: 100px;">     <!-- Jenis -->
+                                <col style="width: 80px;">      <!-- Jam -->
+                                <col style="width: 110px;">     <!-- Insentif -->
+                                <col style="width: 150px;" class="hidden md:table-column">  <!-- Keterangan -->
+                            </colgroup>
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                                 <tr>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700">No</th>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700">Tanggal</th>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700">NIK</th>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700">Nama</th>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 hidden sm:table-cell">Jabatan</th>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700">Jenis</th>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700">Jam</th>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700">Insentif</th>
-                                    <th class="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 hidden md:table-cell">Keterangan</th>
+                                    <th class="px-2 py-3 text-center text-xs font-bold text-gray-700">No</th>
+                                    <th class="px-2 py-3 text-left text-xs font-bold text-gray-700">Tanggal</th>
+                                    <th class="px-2 py-3 text-left text-xs font-bold text-gray-700">NIK</th>
+                                    <th class="px-2 py-3 text-left text-xs font-bold text-gray-700">Nama</th>
+                                    <th class="px-2 py-3 text-left text-xs font-bold text-gray-700 hidden sm:table-cell">Jabatan</th>
+                                    <th class="px-2 py-3 text-left text-xs font-bold text-gray-700">Jenis</th>
+                                    <th class="px-2 py-3 text-center text-xs font-bold text-gray-700">Jam</th>
+                                    <th class="px-2 py-3 text-right text-xs font-bold text-gray-700">Insentif</th>
+                                    <th class="px-2 py-3 text-left text-xs font-bold text-gray-700 hidden md:table-cell">Keterangan</th>
                                 </tr>
                             </thead>
                             <tbody id="lemburTable" class="divide-y divide-gray-200">
