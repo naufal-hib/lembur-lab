@@ -196,7 +196,8 @@ function processKaryawanData(data) {
         departemen: row[2] || '',
         jabatan: row[3] || '',
         password: row[4] || '123',
-        level: row[5] || 'staff'
+        level: row[5] || 'staff',
+        telepon: row[6] || '' // FIXED: Tambah kolom telepon
     }));
 }
 
@@ -555,7 +556,6 @@ function renderStatsBreakdown(lemburData) {
 }
 
 // FIXED: Calendar is now INDEPENDENT - uses all user lembur data
-// FIXED: Calendar is now FULLY INDEPENDENT - uses all user lembur data
 function renderCalendar(lemburData) {
     console.log('🎨 Rendering Calendar - Independent Mode');
     const calendarDiv = document.getElementById('calendar');
@@ -967,4 +967,4 @@ function downloadReportPDF() {
     showAlert('✅ PDF berhasil didownload!', 'success');
 }
 
-console.log('✅ app.js loaded');
+console.log('✅ app.js (FIXED with telepon column) loaded');
