@@ -94,6 +94,7 @@ function renderOverviewTab() {
 // IMPROVED: Admin Calendar View with Mobile Responsive - FIXED
 // IMPROVED: Admin Calendar View with FIXED Mobile Responsive Sticky Columns
 // IMPROVED: Admin Calendar View - FIXED for Desktop & Mobile
+// FIXED: Admin Calendar View - Simple approach, no complex sticky
 function renderAdminCalendarView() {
     const calendarContainer = document.getElementById('adminCalendarView');
     if (!calendarContainer) return;
@@ -153,97 +154,8 @@ function renderAdminCalendarView() {
         }
     });
     
-    // Build calendar table - COMPLETELY FIXED
+    // Build calendar table - SIMPLE APPROACH
     let calendarHtml = `
-        <style>
-            .admin-calendar-container {
-                position: relative;
-                width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            
-            .admin-calendar-table {
-                width: 100%;
-                border-collapse: separate;
-                border-spacing: 0;
-                min-width: 100%;
-            }
-            
-            /* Sticky columns with solid background */
-            .admin-calendar-table .sticky-no {
-                position: sticky;
-                left: 0;
-                z-index: 10;
-                background: white;
-                border-right: 2px solid #d1d5db;
-            }
-            
-            .admin-calendar-table .sticky-nama {
-                position: sticky;
-                left: 50px;
-                z-index: 10;
-                background: white;
-                border-right: 2px solid #d1d5db;
-            }
-            
-            .admin-calendar-table .sticky-nik {
-                position: sticky;
-                left: 180px;
-                z-index: 10;
-                background: white;
-                border-right: 2px solid #d1d5db;
-            }
-            
-            .admin-calendar-table .sticky-posisi {
-                position: sticky;
-                left: 270px;
-                z-index: 10;
-                background: white;
-                border-right: 3px solid #9ca3af;
-            }
-            
-            /* Header sticky */
-            .admin-calendar-table thead th {
-                position: sticky;
-                top: 0;
-                z-index: 15;
-                background: #f3f4f6;
-            }
-            
-            .admin-calendar-table thead th.sticky-no,
-            .admin-calendar-table thead th.sticky-nama,
-            .admin-calendar-table thead th.sticky-nik,
-            .admin-calendar-table thead th.sticky-posisi {
-                z-index: 20;
-                background: #f3f4f6;
-            }
-            
-            /* Data cells - ensure they don't overlap */
-            .admin-calendar-table tbody td {
-                background: white;
-            }
-            
-            .admin-calendar-table tbody tr:hover td {
-                background: #f9fafb;
-            }
-            
-            .admin-calendar-table tbody tr:hover td.sticky-no,
-            .admin-calendar-table tbody tr:hover td.sticky-nama,
-            .admin-calendar-table tbody tr:hover td.sticky-nik,
-            .admin-calendar-table tbody tr:hover td.sticky-posisi {
-                background: #f9fafb;
-            }
-            
-            /* Mobile adjustments */
-            @media (max-width: 640px) {
-                .admin-calendar-table .sticky-no { left: 0; width: 45px; min-width: 45px; }
-                .admin-calendar-table .sticky-nama { left: 45px; width: 120px; min-width: 120px; }
-                .admin-calendar-table .sticky-nik { left: 165px; width: 75px; min-width: 75px; }
-                .admin-calendar-table .sticky-posisi { left: 240px; width: 85px; min-width: 85px; }
-            }
-        </style>
-        
         <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-6">
             ${periodSelectorHtml}
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
@@ -276,16 +188,16 @@ function renderAdminCalendarView() {
                 </div>
             </div>
             
-            <div class="admin-calendar-container rounded-lg border border-gray-300" style="max-height: 600px; overflow-y: auto;">
-                <table class="admin-calendar-table text-xs sm:text-sm">
-                    <thead>
+            <div class="overflow-x-auto rounded-lg border border-gray-200" style="max-height: 600px; overflow-y: auto;">
+                <table class="w-full border-collapse text-xs sm:text-sm" style="min-width: max-content;">
+                    <thead class="bg-gray-100 sticky top-0 z-10">
                         <tr>
-                            <th class="sticky-no border border-gray-300 px-2 py-2 text-center font-bold text-gray-700">NO</th>
-                            <th class="sticky-nama border border-gray-300 px-2 py-2 text-left font-bold text-gray-700">NAMA</th>
-                            <th class="sticky-nik border border-gray-300 px-2 py-2 text-left font-bold text-gray-700">NIK</th>
-                            <th class="sticky-posisi border border-gray-300 px-2 py-2 text-left font-bold text-gray-700">POSISI</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-center font-bold text-gray-700 bg-gray-100" style="min-width: 50px;">NO</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 bg-gray-100" style="min-width: 140px;">NAMA</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 bg-gray-100" style="min-width: 100px;">NIK</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 bg-gray-100" style="min-width: 120px;">POSISI</th>
                             ${days.map(day => `
-                                <th class="border border-gray-300 px-3 py-2 text-center font-bold text-gray-700" style="min-width: 50px;">
+                                <th class="border border-gray-300 px-2 py-2 text-center font-bold text-gray-700 bg-gray-100" style="min-width: 50px;">
                                     ${day.getDate()}
                                 </th>
                             `).join('')}
@@ -294,11 +206,11 @@ function renderAdminCalendarView() {
                     <tbody>
                         ${allKaryawan.map((karyawan, index) => {
                             return `
-                                <tr>
-                                    <td class="sticky-no border border-gray-300 px-2 py-2 text-center font-medium">${index + 1}</td>
-                                    <td class="sticky-nama border border-gray-300 px-2 py-2 text-xs sm:text-sm" title="${karyawan.nama}">${karyawan.nama.length > 15 ? karyawan.nama.substring(0, 15) + '...' : karyawan.nama}</td>
-                                    <td class="sticky-nik border border-gray-300 px-2 py-2 text-xs font-mono">${karyawan.nik}</td>
-                                    <td class="sticky-posisi border border-gray-300 px-2 py-2 text-xs" title="${karyawan.jabatan}">${karyawan.jabatan.length > 10 ? karyawan.jabatan.substring(0, 10) + '...' : karyawan.jabatan}</td>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 text-center font-medium">${index + 1}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 text-xs sm:text-sm" title="${karyawan.nama}">${karyawan.nama}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 text-xs font-mono">${karyawan.nik}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 text-xs" title="${karyawan.jabatan}">${karyawan.jabatan}</td>
                                     ${days.map(day => {
                                         const dateKey = day.toISOString().split('T')[0];
                                         const lemburRecords = lemburByNikDate[karyawan.nik] ? lemburByNikDate[karyawan.nik][dateKey] : null;
@@ -350,7 +262,6 @@ function renderAdminCalendarView() {
     
     calendarContainer.innerHTML = calendarHtml;
 }
-
 function changeAdminPeriod(index) {
     selectedCutOff = activeCutOffs[parseInt(index)];
     renderAdminDashboard();
