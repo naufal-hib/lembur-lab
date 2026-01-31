@@ -92,6 +92,7 @@ function renderOverviewTab() {
 }
 
 // IMPROVED: Admin Calendar View with Mobile Responsive - FIXED
+// IMPROVED: Admin Calendar View with FIXED Mobile Responsive Sticky Columns
 function renderAdminCalendarView() {
     const calendarContainer = document.getElementById('adminCalendarView');
     if (!calendarContainer) return;
@@ -151,8 +152,92 @@ function renderAdminCalendarView() {
         }
     });
     
-    // Build calendar table - MOBILE RESPONSIVE WITH STICKY COLUMNS
+    // Build calendar table - IMPROVED MOBILE RESPONSIVE WITH BETTER STICKY COLUMNS
     let calendarHtml = `
+        <style>
+            /* Sticky columns with proper z-index layering */
+            .calendar-wrapper {
+                position: relative;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .calendar-table {
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+            
+            /* Sticky first column (NO) */
+            .sticky-col-1 {
+                position: sticky;
+                left: 0;
+                z-index: 3;
+                background: white;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            }
+            
+            .sticky-col-1.header {
+                z-index: 5;
+                background: #f3f4f6;
+            }
+            
+            /* Sticky second column (NAMA) */
+            .sticky-col-2 {
+                position: sticky;
+                left: 50px;
+                z-index: 3;
+                background: white;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            }
+            
+            .sticky-col-2.header {
+                z-index: 5;
+                background: #f3f4f6;
+            }
+            
+            /* Sticky third column (NIK) */
+            .sticky-col-3 {
+                position: sticky;
+                left: 180px;
+                z-index: 3;
+                background: white;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            }
+            
+            .sticky-col-3.header {
+                z-index: 5;
+                background: #f3f4f6;
+            }
+            
+            /* Sticky fourth column (POSISI) */
+            .sticky-col-4 {
+                position: sticky;
+                left: 280px;
+                z-index: 3;
+                background: white;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            }
+            
+            .sticky-col-4.header {
+                z-index: 5;
+                background: #f3f4f6;
+            }
+            
+            /* Sticky header row */
+            .calendar-table thead tr {
+                position: sticky;
+                top: 0;
+                z-index: 4;
+            }
+            
+            @media (max-width: 640px) {
+                .sticky-col-1 { left: 0; width: 40px; min-width: 40px; }
+                .sticky-col-2 { left: 40px; width: 110px; min-width: 110px; }
+                .sticky-col-3 { left: 150px; width: 80px; min-width: 80px; }
+                .sticky-col-4 { left: 230px; width: 90px; min-width: 90px; }
+            }
+        </style>
+        
         <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-6">
             ${periodSelectorHtml}
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
@@ -169,6 +254,7 @@ function renderAdminCalendarView() {
                     <span>Export PDF</span>
                 </button>
             </div>
+            
             <div class="flex flex-wrap justify-center gap-3 sm:gap-8 text-xs sm:text-sm mb-4 sm:mb-6">
                 <div class="flex items-center space-x-2">
                     <div class="w-6 h-6 sm:w-8 sm:h-8 bg-red-500 border-2 border-red-700 rounded shadow flex items-center justify-center text-white font-bold text-xs">7</div>
@@ -184,16 +270,16 @@ function renderAdminCalendarView() {
                 </div>
             </div>
             
-            <div class="overflow-x-auto rounded-lg border border-gray-200" style="max-height: 600px; overflow-y: auto;">
-                <table class="w-full border-collapse text-xs sm:text-sm" style="min-width: 100%;">
-                    <thead class="sticky top-0 z-30">
-                        <tr class="bg-gray-100">
-                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky left-0 bg-gray-100 z-40 min-w-[40px]" style="position: sticky; left: 0;">NO</th>
-                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky bg-gray-100 z-40 min-w-[120px] sm:min-w-[140px]" style="position: sticky; left: 40px;">NAMA</th>
-                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky bg-gray-100 z-40 min-w-[80px] sm:min-w-[100px]" style="position: sticky; left: 160px;">NIK</th>
-                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky bg-gray-100 z-40 min-w-[100px] sm:min-w-[120px]" style="position: sticky; left: 260px;">POSISI</th>
+            <div class="calendar-wrapper rounded-lg border border-gray-200" style="max-height: 600px; overflow-y: auto;">
+                <table class="calendar-table w-full text-xs sm:text-sm">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col-1 header border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700">NO</th>
+                            <th class="sticky-col-2 header border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700">NAMA</th>
+                            <th class="sticky-col-3 header border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700">NIK</th>
+                            <th class="sticky-col-4 header border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700">POSISI</th>
                             ${days.map(day => `
-                                <th class="border border-gray-300 px-2 py-2 text-center font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] bg-gray-100">
+                                <th class="border border-gray-300 px-2 py-2 text-center font-bold text-gray-700 bg-gray-100" style="min-width: 45px;">
                                     ${day.getDate()}
                                 </th>
                             `).join('')}
@@ -203,10 +289,10 @@ function renderAdminCalendarView() {
                         ${allKaryawan.map((karyawan, index) => {
                             return `
                                 <tr class="hover:bg-gray-50">
-                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 font-medium sticky left-0 bg-white z-20" style="position: sticky; left: 0;">${index + 1}</td>
-                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky bg-white z-20 text-xs sm:text-sm" style="position: sticky; left: 40px;" title="${karyawan.nama}">${karyawan.nama.length > 15 ? karyawan.nama.substring(0, 15) + '...' : karyawan.nama}</td>
-                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky bg-white z-20 text-xs sm:text-sm" style="position: sticky; left: 160px;">${karyawan.nik}</td>
-                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky bg-white z-20 text-xs sm:text-sm" style="position: sticky; left: 260px;" title="${karyawan.jabatan}">${karyawan.jabatan.length > 12 ? karyawan.jabatan.substring(0, 12) + '...' : karyawan.jabatan}</td>
+                                    <td class="sticky-col-1 border border-gray-300 px-2 sm:px-3 py-2 font-medium text-center">${index + 1}</td>
+                                    <td class="sticky-col-2 border border-gray-300 px-2 sm:px-3 py-2 text-xs sm:text-sm" title="${karyawan.nama}">${karyawan.nama.length > 12 ? karyawan.nama.substring(0, 12) + '...' : karyawan.nama}</td>
+                                    <td class="sticky-col-3 border border-gray-300 px-2 sm:px-3 py-2 text-xs sm:text-sm font-mono">${karyawan.nik}</td>
+                                    <td class="sticky-col-4 border border-gray-300 px-2 sm:px-3 py-2 text-xs sm:text-sm" title="${karyawan.jabatan}">${karyawan.jabatan.length > 10 ? karyawan.jabatan.substring(0, 10) + '...' : karyawan.jabatan}</td>
                                     ${days.map(day => {
                                         const dateKey = day.toISOString().split('T')[0];
                                         const lemburRecords = lemburByNikDate[karyawan.nik] ? lemburByNikDate[karyawan.nik][dateKey] : null;
@@ -216,18 +302,18 @@ function renderAdminCalendarView() {
                                             const isLibur = lemburRecords.some(l => l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur'));
                                             
                                             return `
-                                                <td class="border-2 px-2 sm:px-3 py-2 sm:py-3 text-center font-extrabold text-sm sm:text-base ${
+                                                <td class="border-2 px-2 py-2 sm:py-3 text-center font-extrabold text-sm sm:text-base ${
                                                     isLibur 
                                                         ? 'bg-red-500 text-white border-red-700 shadow-md' 
                                                         : 'bg-emerald-100 text-gray-900 border-emerald-400'
                                                 }" 
-                                                style="min-width: 40px;"
+                                                style="min-width: 45px;"
                                                 title="${lemburRecords.map(l => `${l.jenisLembur}: ${l.jamLembur}`).join('\\n')}">
                                                     ${totalJam}
                                                 </td>
                                             `;
                                         } else {
-                                            return `<td class="border border-gray-300 px-2 sm:px-3 py-2 sm:py-3 bg-gray-50" style="min-width: 40px;"></td>`;
+                                            return `<td class="border border-gray-300 px-2 py-2 bg-gray-50" style="min-width: 45px;"></td>`;
                                         }
                                     }).join('')}
                                 </tr>
@@ -248,7 +334,7 @@ function renderAdminCalendarView() {
                             <li>• <strong class="font-bold">Kotak Merah + Angka</strong> = Lembur Hari Libur</li>
                             <li>• <strong class="font-bold">Kotak Hijau + Angka</strong> = Lembur Hari Kerja</li>
                             <li>• <strong class="font-bold">Kotak Kosong</strong> = Tidak ada lembur</li>
-                            <li class="hidden sm:list-item">• Scroll horizontal untuk melihat semua tanggal</li>
+                            <li>• <strong class="font-bold">Scroll horizontal</strong> untuk melihat semua tanggal</li>
                         </ul>
                     </div>
                 </div>
