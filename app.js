@@ -554,27 +554,17 @@ function renderStatsBreakdown(lemburData) {
 }
 
 // FIXED: Calendar is now INDEPENDENT - uses all user lembur data
+// FIXED: Calendar is now FULLY INDEPENDENT - uses all user lembur data
 function renderCalendar(lemburData) {
+    console.log('🎨 Rendering Calendar - Independent Mode');
     const calendarDiv = document.getElementById('calendar');
     const monthTitle = document.getElementById('calendarMonth');
-    if (!calendarDiv || !monthTitle) return;
-
-    // Auto-select month with data if current month has no data
-    if (lemburData && lemburData.length > 0) {
-        const year = currentCalendarMonth.getFullYear();
-        const month = currentCalendarMonth.getMonth();
-        
-        const hasDataThisMonth = lemburData.some(l => {
-            const date = new Date(l.tanggal);
-            return date.getMonth() === month && date.getFullYear() === year;
-        });
-        
-        if (!hasDataThisMonth) {
-            const firstDate = new Date(lemburData[0].tanggal);
-            currentCalendarMonth = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
-        }
+    if (!calendarDiv || !monthTitle) {
+        console.error('Calendar elements not found');
+        return;
     }
 
+    // Use global calendar state, not filtered by period
     const year = currentCalendarMonth.getFullYear();
     const month = currentCalendarMonth.getMonth();
 
@@ -588,30 +578,37 @@ function renderCalendar(lemburData) {
 
     let html = '';
 
+    // Header days
     const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
     days.forEach(day => {
         html += `<div class="text-xs font-semibold text-gray-600 py-2 text-center">${day}</div>`;
     });
 
+    // Empty cells before first day
     for (let i = 0; i < firstDay; i++) {
         html += '<div></div>';
     }
 
+    // Create lembur map for this month
     const lemburMap = {};
-    lemburData.forEach(l => {
-        const date = new Date(l.tanggal);
-        if (date.getMonth() === month && date.getFullYear() === year) {
-            const day = date.getDate();
-            if (!lemburMap[day]) lemburMap[day] = 0;
-            lemburMap[day] += parseJamLembur(l.jamLembur);
-        }
-    });
+    if (lemburData && lemburData.length > 0) {
+        lemburData.forEach(l => {
+            const date = new Date(l.tanggal);
+            if (date.getMonth() === month && date.getFullYear() === year) {
+                const day = date.getDate();
+                if (!lemburMap[day]) lemburMap[day] = 0;
+                lemburMap[day] += parseJamLembur(l.jamLembur);
+            }
+        });
+    }
 
+    // Render days
+    const today = new Date();
     for (let day = 1; day <= daysInMonth; day++) {
         const hasLembur = lemburMap[day];
-        const isToday = new Date().getDate() === day && 
-                       new Date().getMonth() === month && 
-                       new Date().getFullYear() === year;
+        const isToday = today.getDate() === day && 
+                       today.getMonth() === month && 
+                       today.getFullYear() === year;
         
         let className = 'p-2 rounded-lg text-center transition-all cursor-pointer hover:shadow-md ';
         if (isToday) {
@@ -631,12 +628,20 @@ function renderCalendar(lemburData) {
     }
 
     calendarDiv.innerHTML = html;
+    console.log('✅ Calendar rendered for', monthTitle.textContent);
 }
 
-// FIXED: Calendar navigation is now independent
+// FIXED: Calendar navigation - Always works independently
 function changeMonth(delta) {
+    console.log(`📅 Changing month by ${delta}`);
     currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + delta);
-    renderCalendar(allUserLemburForCalendar); // Always use all user data
+    
+    // Always use all user data, never filtered
+    if (currentUser && allUserLemburForCalendar) {
+        renderCalendar(allUserLemburForCalendar);
+    } else {
+        console.error('User data not available for calendar');
+    }
 }
 
 function changePage(direction) {
