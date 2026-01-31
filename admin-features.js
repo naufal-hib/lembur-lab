@@ -54,7 +54,7 @@ function renderAdminDashboard() {
 function renderOverviewTab() {
     // Get selected period or latest active
     const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
-    const periodLembur = filterLemburByPeriod(allLembur, displayPeriod);
+    const periodLembur = displayPeriod ? filterLemburByPeriod(allLembur, displayPeriod) : allLembur;
     
     let totalJam = 0;
     let totalInsentif = 0;
@@ -91,7 +91,7 @@ function renderOverviewTab() {
     renderAdminCalendarView();
 }
 
-// IMPROVED: Admin Calendar View with Mobile Responsive
+// IMPROVED: Admin Calendar View with Mobile Responsive - FIXED
 function renderAdminCalendarView() {
     const calendarContainer = document.getElementById('adminCalendarView');
     if (!calendarContainer) return;
@@ -151,7 +151,7 @@ function renderAdminCalendarView() {
         }
     });
     
-    // Build calendar table - MOBILE RESPONSIVE
+    // Build calendar table - MOBILE RESPONSIVE WITH STICKY COLUMNS
     let calendarHtml = `
         <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-6">
             ${periodSelectorHtml}
@@ -184,16 +184,16 @@ function renderAdminCalendarView() {
                 </div>
             </div>
             
-            <div class="calendar-scroll overflow-x-auto rounded-lg border border-gray-200">
-                <table class="w-full border-collapse text-xs sm:text-sm">
-                    <thead>
+            <div class="overflow-x-auto rounded-lg border border-gray-200" style="max-height: 600px; overflow-y: auto;">
+                <table class="w-full border-collapse text-xs sm:text-sm" style="min-width: 100%;">
+                    <thead class="sticky top-0 z-30">
                         <tr class="bg-gray-100">
-                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky-col sticky-col-1 bg-gray-100 z-20 min-w-[40px]">NO</th>
-                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky-col sticky-col-2 bg-gray-100 z-20 min-w-[110px] sm:min-w-[140px]">NAMA</th>
-                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky-col sticky-col-3 bg-gray-100 z-20 min-w-[80px] sm:min-w-[100px]">NIK</th>
-                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky-col sticky-col-4 bg-gray-100 z-20 min-w-[100px] sm:min-w-[120px]">POSISI</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky left-0 bg-gray-100 z-40 min-w-[40px]" style="position: sticky; left: 0;">NO</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky bg-gray-100 z-40 min-w-[120px] sm:min-w-[140px]" style="position: sticky; left: 40px;">NAMA</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky bg-gray-100 z-40 min-w-[80px] sm:min-w-[100px]" style="position: sticky; left: 160px;">NIK</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky bg-gray-100 z-40 min-w-[100px] sm:min-w-[120px]" style="position: sticky; left: 260px;">POSISI</th>
                             ${days.map(day => `
-                                <th class="border border-gray-300 px-2 py-2 text-center font-bold text-gray-700 min-w-[40px] sm:min-w-[50px]">
+                                <th class="border border-gray-300 px-2 py-2 text-center font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] bg-gray-100">
                                     ${day.getDate()}
                                 </th>
                             `).join('')}
@@ -203,10 +203,10 @@ function renderAdminCalendarView() {
                         ${allKaryawan.map((karyawan, index) => {
                             return `
                                 <tr class="hover:bg-gray-50">
-                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 font-medium sticky-col sticky-col-1 bg-white z-10">${index + 1}</td>
-                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky-col sticky-col-2 bg-white z-10 text-xs sm:text-sm">${karyawan.nama.length > 15 ? karyawan.nama.substring(0, 15) + '...' : karyawan.nama}</td>
-                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky-col sticky-col-3 bg-white z-10 text-xs sm:text-sm">${karyawan.nik}</td>
-                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky-col sticky-col-4 bg-white z-10 text-xs sm:text-sm">${karyawan.jabatan.length > 12 ? karyawan.jabatan.substring(0, 12) + '...' : karyawan.jabatan}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 font-medium sticky left-0 bg-white z-20" style="position: sticky; left: 0;">${index + 1}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky bg-white z-20 text-xs sm:text-sm" style="position: sticky; left: 40px;" title="${karyawan.nama}">${karyawan.nama.length > 15 ? karyawan.nama.substring(0, 15) + '...' : karyawan.nama}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky bg-white z-20 text-xs sm:text-sm" style="position: sticky; left: 160px;">${karyawan.nik}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky bg-white z-20 text-xs sm:text-sm" style="position: sticky; left: 260px;" title="${karyawan.jabatan}">${karyawan.jabatan.length > 12 ? karyawan.jabatan.substring(0, 12) + '...' : karyawan.jabatan}</td>
                                     ${days.map(day => {
                                         const dateKey = day.toISOString().split('T')[0];
                                         const lemburRecords = lemburByNikDate[karyawan.nik] ? lemburByNikDate[karyawan.nik][dateKey] : null;
@@ -305,7 +305,7 @@ function renderLemburTab() {
     if (!tbody) return;
     
     const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
-    const periodLembur = filterLemburByPeriod(allLembur, displayPeriod);
+    const periodLembur = displayPeriod ? filterLemburByPeriod(allLembur, displayPeriod) : allLembur;
 
     if (periodLembur.length === 0) {
         tbody.innerHTML = `
@@ -422,7 +422,7 @@ function renderLemburRecap(periodLembur) {
                             <p class="text-purple-700 font-medium text-xs sm:text-sm mt-1">Total Karyawan</p>
                         </div>
                         <svg class="w-8 h-8 sm:w-10 sm:h-10 text-purple-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
                     </div>
                 </div>
@@ -496,6 +496,7 @@ async function toggleCutOffStatus(index) {
     renderOverviewTab();
     renderLemburTab();
 }
+
 // ============================================
 // EMPLOYEE DETAIL MODAL
 // ============================================
@@ -508,7 +509,7 @@ function viewKaryawanDetail(nik) {
     
     const lemburData = allLembur.filter(l => l.nik === nik);
     const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
-    const periodLembur = filterLemburByPeriod(lemburData, displayPeriod);
+    const periodLembur = displayPeriod ? filterLemburByPeriod(lemburData, displayPeriod) : lemburData;
     
     let totalJam = 0;
     let totalInsentif = 0;
@@ -574,7 +575,7 @@ function viewKaryawanDetail(nik) {
                     <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
-                    Statistik ${displayPeriod ? displayPeriod.bulan : 'Aktif'}
+                    Statistik ${displayPeriod ? displayPeriod.bulan : 'Semua'}
                 </h4>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
                     <div class="text-center bg-white p-3 sm:p-4 rounded-lg shadow-md border border-indigo-100">
@@ -1086,7 +1087,7 @@ async function deleteCutOff(index) {
 // ============================================
 function exportLemburToCSV() {
     const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
-    const periodLembur = filterLemburByPeriod(allLembur, displayPeriod);
+    const periodLembur = displayPeriod ? filterLemburByPeriod(allLembur, displayPeriod) : allLembur;
     
     if (periodLembur.length === 0) {
         showAlert('Tidak ada data untuk diexport', 'warning');
@@ -1145,7 +1146,7 @@ async function exportKaryawanPDF(nik) {
     
     const lemburData = allLembur.filter(l => l.nik === nik);
     const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
-    const periodLembur = filterLemburByPeriod(lemburData, displayPeriod);
+    const periodLembur = displayPeriod ? filterLemburByPeriod(lemburData, displayPeriod) : lemburData;
 
     let totalJam = 0;
     let totalInsentif = 0;
