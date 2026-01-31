@@ -5,10 +5,14 @@ let currentUser = null;
 let allKaryawan = [];
 let allLembur = [];
 let allCutOff = [];
-let activeCutOffs = []; // CHANGED: Now supports multiple active periods
-let selectedCutOff = null; // For user selection
+let activeCutOffs = [];
+let selectedCutOff = null;
 let currentPage = 1;
 const ITEMS_PER_PAGE = 10;
+
+// Calendar state - INDEPENDENT from period selection
+let currentCalendarMonth = new Date();
+let allUserLemburForCalendar = []; // Store all user's lembur data for calendar
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -115,28 +119,23 @@ async function loadAllData() {
     console.log('🔄 Loading data from Google Sheets...');
     showLoading();
     try {
-        // Validate configuration
         const configCheck = validateConfig();
         if (!configCheck.valid) {
             throw new Error(configCheck.message);
         }
         
-        // Load all data from sheets
         const [karyawanData, lemburData, cutOffData] = await Promise.all([
             fetchSheetData(SHEET_CONFIG.KARYAWAN),
             fetchSheetData(SHEET_CONFIG.LEMBUR),
             fetchSheetData(SHEET_CONFIG.CUTOFF)
         ]);
         
-        // Process data
         allKaryawan = processKaryawanData(karyawanData);
         allLembur = processLemburData(lemburData);
         allCutOff = processCutOffData(cutOffData);
         
-        // Find all active cut-offs (CHANGED: multiple active periods)
         activeCutOffs = allCutOff.filter(c => c.status === 'Aktif');
         
-        // Set default selected period (latest active or latest overall)
         if (activeCutOffs.length > 0) {
             selectedCutOff = activeCutOffs[activeCutOffs.length - 1];
         } else if (allCutOff.length > 0) {
@@ -150,7 +149,6 @@ async function loadAllData() {
             activeCutOffs: activeCutOffs.length
         });
         
-        // Save to localStorage for cache
         saveToLocalStorage('karyawan', allKaryawan);
         saveToLocalStorage('lembur', allLembur);
         saveToLocalStorage('cutoff', allCutOff);
@@ -162,7 +160,6 @@ async function loadAllData() {
         console.error('❌ Error loading data:', error);
         hideLoading();
         
-        // Try to load from localStorage as fallback
         const cachedKaryawan = getFromLocalStorage('karyawan');
         const cachedLembur = getFromLocalStorage('lembur');
         const cachedCutOff = getFromLocalStorage('cutoff');
@@ -191,7 +188,7 @@ async function loadAllData() {
 
 function processKaryawanData(data) {
     if (data.length < 2) return [];
-    const rows = data.slice(1); // Skip header
+    const rows = data.slice(1);
 
     return rows.filter(row => row[0]).map(row => ({
         nik: String(row[0] || '').trim(),
@@ -205,7 +202,7 @@ function processKaryawanData(data) {
 
 function processLemburData(data) {
     if (data.length < 2) return [];
-    const rows = data.slice(1); // Skip header
+    const rows = data.slice(1);
 
     return rows.filter(row => row[2]).map(row => ({
         no: row[0] || '',
@@ -224,7 +221,7 @@ function processLemburData(data) {
 
 function processCutOffData(data) {
     if (data.length < 2) return [];
-    const rows = data.slice(1); // Skip header
+    const rows = data.slice(1);
 
     return rows.filter(row => row[0]).map(row => ({
         bulan: row[0] || '',
@@ -241,7 +238,6 @@ async function login(nik, password) {
     console.log('Login attempt:', nik);
     showLoading();
     
-    // Check if admin
     if (nik === ADMIN_CONFIG.NIK) {
         if (password === ADMIN_CONFIG.PASSWORD) {
             currentUser = {
@@ -261,7 +257,6 @@ async function login(nik, password) {
         }
     }
 
-    // Load data if not cached
     if (allKaryawan.length === 0) {
         const success = await loadAllData();
         if (!success) {
@@ -270,7 +265,6 @@ async function login(nik, password) {
         }
     }
 
-    // Find user
     const user = allKaryawan.find(k => k.nik === nik);
 
     if (!user) {
@@ -285,7 +279,6 @@ async function login(nik, password) {
         return;
     }
 
-    // Login success
     currentUser = {
         nik: user.nik,
         nama: user.nama,
@@ -355,7 +348,6 @@ async function initKaryawanDashboard() {
     console.log('🚀 Init Karyawan Dashboard');
     if (!checkAuth()) return;
 
-    // Load from cache first
     const cachedKaryawan = getFromLocalStorage('karyawan');
     const cachedLembur = getFromLocalStorage('lembur');
     const cachedCutOff = getFromLocalStorage('cutoff');
@@ -375,7 +367,6 @@ async function initKaryawanDashboard() {
         renderKaryawanDashboard();
     }
 
-    // Refresh from Google Sheets
     loadAllData().then((success) => {
         if (success) {
             renderKaryawanDashboard();
@@ -385,19 +376,14 @@ async function initKaryawanDashboard() {
 
 function renderKaryawanDashboard() {
     console.log("🎨 Rendering Karyawan Dashboard");
-    console.log("Current user:", currentUser);
-    console.log("All lembur data:", allLembur.length);
-    console.log("All cutoff:", allCutOff.length);
-    console.log("Active cutoffs:", activeCutOffs);
-    console.log("Selected cutoff:", selectedCutOff);
     
-    // User info - IMPROVED: Make name more prominent
+    // User info
     const userNameEl = document.getElementById("userName");
     const userNIKEl = document.getElementById("userNIK");
     if (userNameEl) userNameEl.textContent = currentUser.nama;
-    if (userNIKEl) userNIKEl.textContent = `NIK: ${currentUser.nik}`;
+    if (userNIKEl) userNIKEl.textContent = `NIK: ${currentUser.nik} | ${currentUser.jabatan}`;
 
-    // Period selector - NEW: Show all active periods
+    // Period selector
     renderPeriodSelector();
     
     // Active period display
@@ -408,14 +394,15 @@ function renderKaryawanDashboard() {
         activePeriodEl.textContent = "Tidak ada periode aktif";
     }
 
-    // Filter lembur - ALWAYS show all data if no period selected
+    // Filter lembur by selected period
     const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
-    console.log("User lembur records:", userLembur.length);
+    
+    // Store all user lembur for calendar (independent)
+    allUserLemburForCalendar = userLembur;
     
     const periodLembur = selectedCutOff ? filterLemburByPeriod(userLembur, selectedCutOff) : userLembur;
-    console.log("Period lembur records (after filter):", periodLembur.length);
 
-    // Calculate totals
+    // Calculate totals for SELECTED PERIOD
     let totalHours = 0;
     let totalInsentif = 0;
 
@@ -424,40 +411,22 @@ function renderKaryawanDashboard() {
         totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
     });
 
-    console.log("Total hours:", totalHours);
-    console.log("Total insentif:", totalInsentif);
-
-    // Display stats
+    // Display stats - SINGLE SET
     const totalHoursEl = document.getElementById("totalHours");
     const totalInsentifEl = document.getElementById("totalInsentif");
     if (totalHoursEl) totalHoursEl.textContent = totalHours;
     if (totalInsentifEl) totalInsentifEl.textContent = formatCurrency(totalInsentif);
 
-    // Render components IMMEDIATELY
-    console.log("Rendering stats with", periodLembur.length, "records...");
+    // Render components
     renderStatsBreakdown(periodLembur);
-    
-    console.log("Rendering calendar...");
-    renderCalendar(periodLembur);
-    
-    console.log("Rendering history table...");
+    renderCalendar(allUserLemburForCalendar); // Calendar uses ALL data, not filtered
     renderHistoryTable(periodLembur);
-    
-    // NEW: Render comparison if there are multiple active periods
-    if (activeCutOffs.length > 1) {
-        console.log("Rendering comparison...");
-        renderPeriodComparison();
-    }
-    
-    console.log("✅ Dashboard render complete!");
 }
 
-// NEW: Period selector for karyawan
 function renderPeriodSelector() {
     const selectorContainer = document.getElementById('periodSelectorContainer');
     if (!selectorContainer || allCutOff.length === 0) return;
     
-    // Only show active periods
     const periodsToShow = activeCutOffs.length > 0 ? activeCutOffs : allCutOff.slice(-3);
     
     if (periodsToShow.length <= 1) {
@@ -467,7 +436,7 @@ function renderPeriodSelector() {
     
     const html = `
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Periode:</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Periode untuk Statistik & Riwayat:</label>
             <select id="periodSelector" onchange="changePeriod(this.value)" class="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 ${periodsToShow.map((period, index) => `
                     <option value="${index}" ${period === selectedCutOff ? 'selected' : ''}>
@@ -487,88 +456,9 @@ function changePeriod(index) {
     renderKaryawanDashboard();
 }
 
-// NEW: Period comparison
-function renderPeriodComparison() {
-    const comparisonContainer = document.getElementById('periodComparison');
-    if (!comparisonContainer || activeCutOffs.length < 2) return;
-    
-    const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
-    
-    // Calculate for each active period
-    const periodStats = activeCutOffs.map(period => {
-        const periodData = filterLemburByPeriod(userLembur, period);
-        let totalJam = 0;
-        let totalInsentif = 0;
-        
-        periodData.forEach(l => {
-            totalJam += parseJamLembur(l.jamLembur);
-            totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
-        });
-        
-        return {
-            bulan: period.bulan,
-            totalJam,
-            totalInsentif
-        };
-    });
-    
-    // Find current and previous
-    const currentIndex = activeCutOffs.findIndex(p => p === selectedCutOff);
-    if (currentIndex <= 0) return; // No previous period
-    
-    const current = periodStats[currentIndex];
-    const previous = periodStats[currentIndex - 1];
-    
-    const jamDiff = current.totalJam - previous.totalJam;
-    const insentifDiff = current.totalInsentif - previous.totalInsentif;
-    const jamPercent = previous.totalJam > 0 ? ((jamDiff / previous.totalJam) * 100).toFixed(1) : 0;
-    const insentifPercent = previous.totalInsentif > 0 ? ((insentifDiff / previous.totalInsentif) * 100).toFixed(1) : 0;
-    
-    const html = `
-        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow p-6 mb-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                Perbandingan dengan Periode Sebelumnya
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white rounded-lg p-4 shadow">
-                    <p class="text-sm text-gray-600 mb-1">Total Jam Lembur</p>
-                    <div class="flex items-baseline space-x-2">
-                        <p class="text-2xl font-bold text-gray-800">${current.totalJam}</p>
-                        <span class="text-sm ${jamDiff > 0 ? 'text-green-600' : jamDiff < 0 ? 'text-red-600' : 'text-gray-600'}">
-                            ${jamDiff > 0 ? '↑' : jamDiff < 0 ? '↓' : '='} ${Math.abs(jamDiff)} jam (${jamPercent}%)
-                        </span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Periode sebelumnya: ${previous.totalJam} jam</p>
-                </div>
-                <div class="bg-white rounded-lg p-4 shadow">
-                    <p class="text-sm text-gray-600 mb-1">Total Insentif</p>
-                    <div class="flex items-baseline space-x-2">
-                        <p class="text-2xl font-bold text-gray-800">${formatCurrency(current.totalInsentif)}</p>
-                        <span class="text-sm ${insentifDiff > 0 ? 'text-green-600' : insentifDiff < 0 ? 'text-red-600' : 'text-gray-600'}">
-                            ${insentifDiff > 0 ? '↑' : insentifDiff < 0 ? '↓' : '='} ${insentifPercent}%
-                        </span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Periode sebelumnya: ${formatCurrency(previous.totalInsentif)}</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    comparisonContainer.innerHTML = html;
-}
-
-// NEW: Render stats breakdown instead of chart (more reliable, no Chart.js dependency)
 function renderStatsBreakdown(lemburData) {
     const container = document.getElementById('statsBreakdown');
-    if (!container) {
-        console.warn('statsBreakdown element not found');
-        return;
-    }
-    
-    console.log('📊 Rendering stats breakdown with', lemburData ? lemburData.length : 0, 'records');
+    if (!container) return;
     
     if (!lemburData || lemburData.length === 0) {
         container.innerHTML = `
@@ -576,13 +466,12 @@ function renderStatsBreakdown(lemburData) {
                 <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                 </svg>
-                <p class="font-medium">Belum ada data lembur</p>
+                <p class="font-medium text-sm sm:text-base">Belum ada data lembur</p>
             </div>
         `;
         return;
     }
     
-    // Group by type
     let hariKerja = 0;
     let hariLibur = 0;
     let totalDays = 0;
@@ -600,35 +489,33 @@ function renderStatsBreakdown(lemburData) {
     
     totalDays = uniqueDates.size;
     const totalJam = hariKerja + hariLibur;
-    const maxJam = Math.max(hariKerja, hariLibur, 1); // Prevent division by zero
+    const maxJam = Math.max(hariKerja, hariLibur, 1);
     
     const hariKerjaPercent = (hariKerja / maxJam) * 100;
     const hariLiburPercent = (hariLibur / maxJam) * 100;
     
     container.innerHTML = `
         <div class="space-y-4">
-            <!-- Total Summary -->
             <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-200">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-sm text-gray-600 font-medium">Total Hari Lembur</p>
-                        <p class="text-3xl font-bold text-indigo-600">${totalDays}</p>
+                        <p class="text-xs sm:text-sm text-gray-600 font-medium">Total Hari Lembur</p>
+                        <p class="text-2xl sm:text-3xl font-bold text-indigo-600">${totalDays}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-gray-600 font-medium">Total Jam</p>
-                        <p class="text-3xl font-bold text-purple-600">${totalJam}</p>
+                        <p class="text-xs sm:text-sm text-gray-600 font-medium">Total Jam</p>
+                        <p class="text-2xl sm:text-3xl font-bold text-purple-600">${totalJam}</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Hari Kerja Bar -->
             <div>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-gray-700 flex items-center">
+                    <span class="text-xs sm:text-sm font-semibold text-gray-700 flex items-center">
                         <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
                         Hari Kerja
                     </span>
-                    <span class="text-sm font-bold text-blue-600">${hariKerja} jam</span>
+                    <span class="text-xs sm:text-sm font-bold text-blue-600">${hariKerja} jam</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
                     <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2" style="width: ${hariKerjaPercent}%">
@@ -637,14 +524,13 @@ function renderStatsBreakdown(lemburData) {
                 </div>
             </div>
             
-            <!-- Hari Libur Bar -->
             <div>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-gray-700 flex items-center">
+                    <span class="text-xs sm:text-sm font-semibold text-gray-700 flex items-center">
                         <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
                         Hari Libur
                     </span>
-                    <span class="text-sm font-bold text-red-600">${hariLibur} jam</span>
+                    <span class="text-xs sm:text-sm font-bold text-red-600">${hariLibur} jam</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
                     <div class="bg-gradient-to-r from-red-500 to-red-600 h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2" style="width: ${hariLiburPercent}%">
@@ -653,206 +539,39 @@ function renderStatsBreakdown(lemburData) {
                 </div>
             </div>
             
-            <!-- Stats Summary -->
             <div class="grid grid-cols-2 gap-3 pt-2">
                 <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
-                    <p class="text-2xl font-bold text-blue-600">${hariKerja}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-blue-600">${hariKerja}</p>
                     <p class="text-xs text-gray-600 font-medium mt-1">Jam Hari Kerja</p>
                 </div>
                 <div class="bg-red-50 rounded-lg p-3 text-center border border-red-200">
-                    <p class="text-2xl font-bold text-red-600">${hariLibur}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-red-600">${hariLibur}</p>
                     <p class="text-xs text-gray-600 font-medium mt-1">Jam Hari Libur</p>
                 </div>
             </div>
         </div>
     `;
-    
-    console.log('✅ Stats breakdown rendered');
 }
 
-function renderOvertimeChart(lemburData) {
-    const ctx = document.getElementById('overtimeChart');
-    if (!ctx) {
-        console.warn('❌ overtimeChart element not found');
-        return;
-    }
-    
-    console.log('📊 Rendering overtime chart with', lemburData ? lemburData.length : 0, 'records');
-    
-    // Wait for Chart.js
-    if (typeof Chart === 'undefined') {
-        console.warn('⏳ Chart.js not loaded yet, retrying...');
-        setTimeout(() => renderOvertimeChart(lemburData), 1000);
-        return;
-    }
-
-    // Destroy existing chart
-    if (window.overtimeChart) {
-        window.overtimeChart.destroy();
-        window.overtimeChart = null;
-    }
-
-    // Handle empty data
-    if (!lemburData || lemburData.length === 0) {
-        console.log('📊 No data for chart, showing empty message');
-        // Create empty chart with message
-        window.overtimeChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Jam Lembur',
-                    data: [],
-                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
-                    borderColor: 'rgba(79, 70, 229, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    title: {
-                        display: true,
-                        text: 'Belum ada data lembur untuk periode ini',
-                        color: '#9ca3af',
-                        font: {
-                            size: 14
-                        }
-                    }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Jam Lembur'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Minggu'
-                        }
-                    }
-                }
-            }
-        });
-        return;
-    }
-
-    // Group by week
-    const weekData = {};
-    lemburData.forEach(l => {
-        try {
-            const date = new Date(l.tanggal);
-            const weekNum = getWeekNumber(date);
-            const weekKey = `Minggu ${weekNum}`;
-            
-            if (!weekData[weekKey]) weekData[weekKey] = 0;
-            weekData[weekKey] += parseJamLembur(l.jamLembur);
-        } catch (error) {
-            console.error('Error processing lembur record:', l, error);
-        }
-    });
-
-    console.log('📊 Week data:', weekData);
-
-    // Create chart
-    try {
-        window.overtimeChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(weekData),
-                datasets: [{
-                    label: 'Jam Lembur',
-                    data: Object.values(weekData),
-                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
-                    borderColor: 'rgba(79, 70, 229, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Jam Lembur'
-                        },
-                        ticks: {
-                            stepSize: 5
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Minggu'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.parsed.y + ' jam';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        console.log('✅ Chart rendered successfully');
-    } catch (error) {
-        console.error('❌ Error creating chart:', error);
-    }
-}
-
-function getWeekNumber(date) {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-}
-
-let currentCalendarMonth = new Date();
-
+// FIXED: Calendar is now INDEPENDENT - uses all user lembur data
 function renderCalendar(lemburData) {
     const calendarDiv = document.getElementById('calendar');
     const monthTitle = document.getElementById('calendarMonth');
-    if (!calendarDiv || !monthTitle) {
-        console.warn('❌ Calendar elements not found');
-        return;
-    }
-    
-    console.log('📅 Rendering calendar with', lemburData ? lemburData.length : 0, 'records');
+    if (!calendarDiv || !monthTitle) return;
 
     // Auto-select month with data if current month has no data
     if (lemburData && lemburData.length > 0) {
         const year = currentCalendarMonth.getFullYear();
         const month = currentCalendarMonth.getMonth();
         
-        // Check if current month has data
         const hasDataThisMonth = lemburData.some(l => {
             const date = new Date(l.tanggal);
             return date.getMonth() === month && date.getFullYear() === year;
         });
         
-        // If no data this month, use first available month
         if (!hasDataThisMonth) {
             const firstDate = new Date(lemburData[0].tanggal);
             currentCalendarMonth = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
-            console.log('📅 Auto-selected month:', currentCalendarMonth.toLocaleDateString('id-ID'));
         }
     }
 
@@ -869,33 +588,25 @@ function renderCalendar(lemburData) {
 
     let html = '';
 
-    // Headers
     const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
     days.forEach(day => {
         html += `<div class="text-xs font-semibold text-gray-600 py-2 text-center">${day}</div>`;
     });
 
-    // Empty cells
     for (let i = 0; i < firstDay; i++) {
         html += '<div></div>';
     }
 
-    // Create lembur map
     const lemburMap = {};
-    let foundDataThisMonth = 0;
     lemburData.forEach(l => {
         const date = new Date(l.tanggal);
         if (date.getMonth() === month && date.getFullYear() === year) {
             const day = date.getDate();
             if (!lemburMap[day]) lemburMap[day] = 0;
             lemburMap[day] += parseJamLembur(l.jamLembur);
-            foundDataThisMonth++;
         }
     });
-    
-    console.log('📅 Found', foundDataThisMonth, 'records for', monthTitle.textContent);
 
-    // Days
     for (let day = 1; day <= daysInMonth; day++) {
         const hasLembur = lemburMap[day];
         const isToday = new Date().getDate() === day && 
@@ -913,21 +624,19 @@ function renderCalendar(lemburData) {
         
         html += `
             <div class="${className}">
-                <div class="text-sm font-medium">${day}</div>
+                <div class="text-xs sm:text-sm font-medium">${day}</div>
                 ${hasLembur ? `<div class="text-xs text-green-700 font-bold mt-1">${hasLembur}j</div>` : ''}
             </div>
         `;
     }
 
     calendarDiv.innerHTML = html;
-    console.log('✅ Calendar rendered');
 }
 
+// FIXED: Calendar navigation is now independent
 function changeMonth(delta) {
     currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + delta);
-    const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
-    const periodLembur = filterLemburByPeriod(userLembur, selectedCutOff);
-    renderCalendar(periodLembur);
+    renderCalendar(allUserLemburForCalendar); // Always use all user data
 }
 
 function changePage(direction) {
@@ -948,29 +657,20 @@ function changePage(direction) {
 
 function renderHistoryTable(lemburData) {
     const tbody = document.getElementById('historyTable');
-    if (!tbody) {
-        console.warn('❌ historyTable element not found');
-        return;
-    }
-    
-    console.log('📋 Rendering history table with', lemburData ? lemburData.length : 0, 'records');
-    console.log('📋 Current page:', currentPage);
+    if (!tbody) return;
     
     if (!lemburData || lemburData.length === 0) {
-        console.log('📋 No data to display');
         tbody.innerHTML = `
             <tr>
                 <td colspan="5" class="px-4 py-8 text-center text-gray-500">
-                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <p class="text-lg font-medium">Belum ada data lembur untuk periode ini</p>
-                    <p class="text-sm text-gray-400 mt-1">Data lembur Anda akan muncul di sini</p>
+                    <p class="text-sm sm:text-lg font-medium">Belum ada data lembur</p>
                 </td>
             </tr>
         `;
         
-        // Hide pagination
         const paginationDiv = document.getElementById('paginationControls');
         if (paginationDiv) {
             paginationDiv.innerHTML = '';
@@ -981,16 +681,11 @@ function renderHistoryTable(lemburData) {
     const sortedData = [...lemburData].sort((a, b) => {
         const dateA = new Date(a.tanggal);
         const dateB = new Date(b.tanggal);
-        return dateB - dateA; // Newest first
+        return dateB - dateA;
     });
     
-    console.log('📋 Sorted data:', sortedData.length, 'records');
-    
-    // Pagination
     const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-    console.log('📋 Total pages:', totalPages);
     
-    // Reset to page 1 if current page exceeds total pages
     if (currentPage > totalPages) {
         currentPage = 1;
     }
@@ -998,95 +693,258 @@ function renderHistoryTable(lemburData) {
     const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
     const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
     const currentItems = sortedData.slice(indexOfFirstItem, indexOfLastItem);
-    
-    console.log('📋 Showing items', indexOfFirstItem, 'to', indexOfLastItem);
-    console.log('📋 Current items:', currentItems.length);
 
-    try {
-        tbody.innerHTML = currentItems.map(l => {
-            const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
-            return `
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-4 py-3 text-sm">${formatDate(l.tanggal)}</td>
-                    <td class="px-4 py-3 text-sm">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium ${
-                            l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur') 
-                                ? 'bg-red-100 text-red-800' 
-                                : 'bg-blue-100 text-blue-800'
-                        }">
-                            ${l.jenisLembur || '-'}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 text-sm font-semibold text-indigo-600">${l.jamLembur || '0 Jam'}</td>
-                    <td class="px-4 py-3 text-sm font-semibold text-green-600">${formatCurrency(insentif)}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">${l.keterangan || '-'}</td>
-                </tr>
-            `;
-        }).join('');
-        
-        console.log('✅ Table HTML rendered');
-    } catch (error) {
-        console.error('❌ Error rendering table:', error);
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="px-4 py-8 text-center text-red-500">
-                    <p class="text-lg font-medium">Error menampilkan data</p>
-                    <p class="text-sm mt-2">${error.message}</p>
+    tbody.innerHTML = currentItems.map(l => {
+        const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
+        return `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">${formatDate(l.tanggal)}</td>
+                <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                        l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur') 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-blue-100 text-blue-800'
+                    }">
+                        ${l.jenisLembur || '-'}
+                    </span>
                 </td>
+                <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-indigo-600">${l.jamLembur || '0 Jam'}</td>
+                <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-green-600">${formatCurrency(insentif)}</td>
+                <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">${l.keterangan || '-'}</td>
             </tr>
         `;
-        return;
-    }
+    }).join('');
 
-    // Pagination controls
     const paginationDiv = document.getElementById('paginationControls');
     if (paginationDiv && totalPages > 1) {
         paginationDiv.innerHTML = `
             <div class="flex justify-center items-center space-x-2 mt-4">
-                <button onclick="changePage(-1)" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed" ${currentPage === 1 ? 'disabled' : ''}>
-                    &laquo; Sebelumnya
+                <button onclick="changePage(-1)" class="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base" ${currentPage === 1 ? 'disabled' : ''}>
+                    &laquo; Prev
                 </button>
-                <span class="text-gray-700 font-medium">Halaman ${currentPage} dari ${totalPages}</span>
-                <button onclick="changePage(1)" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed" ${currentPage === totalPages ? 'disabled' : ''}>
-                    Berikutnya &raquo;
+                <span class="text-gray-700 font-medium text-sm sm:text-base">Hal ${currentPage} dari ${totalPages}</span>
+                <button onclick="changePage(1)" class="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Next &raquo;
                 </button>
             </div>
         `;
     } else if (paginationDiv) {
         paginationDiv.innerHTML = '';
     }
-    
-    console.log('✅ History table rendered successfully');
 }
 
-function downloadReport() {
-    const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
-    const periodLembur = filterLemburByPeriod(userLembur, selectedCutOff);
+// ============================================
+// CHANGE PASSWORD FEATURE
+// ============================================
+function showChangePasswordModal() {
+    const modal = document.getElementById('changePasswordModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('changePasswordForm').reset();
+    }
+}
+
+function closeChangePasswordModal() {
+    const modal = document.getElementById('changePasswordModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function changePassword(event) {
+    event.preventDefault();
     
-    if (periodLembur.length === 0) {
-        showAlert('Tidak ada data untuk didownload', 'warning');
+    const oldPassword = document.getElementById('oldPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Find current user in karyawan list
+    const karyawan = allKaryawan.find(k => k.nik === currentUser.nik);
+    
+    if (!karyawan) {
+        showAlert('Data karyawan tidak ditemukan!', 'error');
         return;
     }
     
-    let csv = 'Tanggal,Jenis Lembur,Jam,Insentif,Keterangan\n';
-
-    periodLembur.forEach(l => {
-        const jam = parseJamLembur(l.jamLembur);
-        const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
-        csv += `${l.tanggal},"${l.jenisLembur}",${jam},${insentif},"${l.keterangan}"\n`;
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Laporan_Lembur_${currentUser.nik}_${selectedCutOff ? selectedCutOff.bulan.replace(/\s/g, '_') : 'All'}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    // Validate old password
+    if (karyawan.password !== oldPassword) {
+        showAlert('Password lama tidak sesuai!', 'error');
+        return;
+    }
     
-    showAlert('✅ Laporan berhasil didownload!', 'success');
+    // Validate new password
+    if (newPassword.length < 4) {
+        showAlert('Password baru minimal 4 karakter!', 'error');
+        return;
+    }
+    
+    // Validate confirmation
+    if (newPassword !== confirmPassword) {
+        showAlert('Konfirmasi password tidak cocok!', 'error');
+        return;
+    }
+    
+    // Update password
+    karyawan.password = newPassword;
+    
+    // Save to localStorage
+    saveToLocalStorage('karyawan', allKaryawan);
+    
+    // Sync to Google Sheets
+    try {
+        showLoading();
+        await callAppsScript('updateKaryawan', { data: allKaryawan });
+        hideLoading();
+        showAlert('✅ Password berhasil diubah!', 'success');
+        closeChangePasswordModal();
+    } catch (error) {
+        hideLoading();
+        console.error('Error syncing to Sheets:', error);
+        showAlert('⚠️ Password diubah di sistem, tetapi gagal sync ke Google Sheets.', 'warning');
+        closeChangePasswordModal();
+    }
+}
+
+// ============================================
+// DOWNLOAD PDF WITH PERIOD SELECTION
+// ============================================
+function showDownloadPDFModal() {
+    const modal = document.getElementById('downloadPDFModal');
+    const selector = document.getElementById('pdfPeriodSelector');
+    
+    if (!modal || !selector) return;
+    
+    // Populate period options
+    const periods = activeCutOffs.length > 0 ? activeCutOffs : allCutOff;
+    
+    selector.innerHTML = periods.map((period, index) => `
+        <option value="${index}">
+            ${period.bulan} (${formatDate(period.tanggalMulai)} - ${formatDate(period.tanggalAkhir)})
+        </option>
+    `).join('');
+    
+    // Pre-select current period
+    if (selectedCutOff) {
+        const selectedIndex = periods.findIndex(p => p === selectedCutOff);
+        if (selectedIndex >= 0) {
+            selector.value = selectedIndex;
+        }
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function closeDownloadPDFModal() {
+    const modal = document.getElementById('downloadPDFModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function downloadReportPDF() {
+    const selector = document.getElementById('pdfPeriodSelector');
+    const selectedIndex = parseInt(selector.value);
+    
+    const periods = activeCutOffs.length > 0 ? activeCutOffs : allCutOff;
+    const selectedPeriod = periods[selectedIndex];
+    
+    if (!selectedPeriod) {
+        showAlert('Pilih periode terlebih dahulu!', 'error');
+        return;
+    }
+    
+    const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
+    const periodLembur = filterLemburByPeriod(userLembur, selectedPeriod);
+    
+    if (periodLembur.length === 0) {
+        showAlert('Tidak ada data lembur untuk periode ini', 'warning');
+        return;
+    }
+    
+    // Calculate totals
+    let totalJam = 0;
+    let totalInsentif = 0;
+    
+    periodLembur.forEach(l => {
+        totalJam += parseJamLembur(l.jamLembur);
+        totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level);
+    });
+    
+    // Generate PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LAPORAN LEMBUR KARYAWAN', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Periode: ${selectedPeriod.bulan}`, 105, 28, { align: 'center' });
+    doc.text(`${formatDate(selectedPeriod.tanggalMulai)} - ${formatDate(selectedPeriod.tanggalAkhir)}`, 105, 34, { align: 'center' });
+    
+    // Employee Info
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INFORMASI KARYAWAN', 20, 45);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`NIK: ${currentUser.nik}`, 20, 53);
+    doc.text(`Nama: ${currentUser.nama}`, 20, 60);
+    doc.text(`Jabatan: ${currentUser.jabatan}`, 20, 67);
+    doc.text(`Level: ${currentUser.level}`, 20, 74);
+    
+    // Summary
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RINGKASAN', 20, 87);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Jam Lembur: ${totalJam} jam`, 20, 95);
+    doc.text(`Total Insentif: ${formatCurrency(totalInsentif)}`, 20, 102);
+    doc.text(`Jumlah Hari Lembur: ${periodLembur.length} hari`, 20, 109);
+    
+    // Detail table
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DETAIL LEMBUR', 20, 122);
+    
+    const headers = [['No', 'Tanggal', 'Jenis', 'Jam', 'Insentif']];
+    const data = periodLembur.map((l, index) => [
+        index + 1,
+        formatDate(l.tanggal),
+        l.jenisLembur,
+        parseJamLembur(l.jamLembur) + ' jam',
+        formatCurrency(calculateInsentif(l.jamLembur, l.jenisLembur, currentUser.level))
+    ]);
+    
+    doc.autoTable({
+        startY: 127,
+        head: headers,
+        body: data,
+        theme: 'grid',
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [79, 70, 229], textColor: 255 }
+    });
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text(`Halaman ${i} dari ${pageCount}`, 105, 290, { align: 'center' });
+        doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 20, 290);
+    }
+    
+    // Save
+    doc.save(`Laporan_Lembur_${currentUser.nik}_${selectedPeriod.bulan.replace(/\s/g, '_')}.pdf`);
+    
+    closeDownloadPDFModal();
+    showAlert('✅ PDF berhasil didownload!', 'success');
 }
 
 console.log('✅ app.js loaded');
