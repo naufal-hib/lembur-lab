@@ -1253,6 +1253,7 @@ function switchTab(tabName) {
 // ============================================
 // EXPORT CALENDAR TO PDF - WITH COLORS & TOTALS
 // ============================================
+// EXPORT CALENDAR TO PDF - WITH COLORS & TOTALS (FIXED)
 async function exportCalendarPDF() {
     const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
     
@@ -1265,7 +1266,7 @@ async function exportCalendarPDF() {
     
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+        const doc = new jsPDF('l', 'mm', 'a4');
         
         // Header
         doc.setFontSize(16);
@@ -1301,14 +1302,13 @@ async function exportCalendarPDF() {
             }
         });
         
-        // Headers: NO, Nama, NIK, Posisi, [dates...], Total Jam, Total Insentif
-        const headers = ['No', 'Nama', 'NIK', 'Posisi', ...days.map(d => d.getDate()), 'Total Jam', 'Total Insentif'];
+        // Build table data with totals
+        const tableData = [];
         
-        // Build table data
-        const tableData = allKaryawan.map((karyawan, index) => {
+        allKaryawan.forEach((karyawan, index) => {
             const row = [
                 index + 1,
-                karyawan.nama.substring(0, 20),
+                karyawan.nama.substring(0, 18),
                 karyawan.nik,
                 karyawan.jabatan.substring(0, 12)
             ];
@@ -1316,7 +1316,7 @@ async function exportCalendarPDF() {
             let totalJamKaryawan = 0;
             let totalInsentifKaryawan = 0;
             
-            // Days data
+            // Process each day
             days.forEach(day => {
                 const dateKey = day.toISOString().split('T')[0];
                 const lemburRecords = lemburByNikDate[karyawan.nik] ? lemburByNikDate[karyawan.nik][dateKey] : null;
@@ -1325,7 +1325,7 @@ async function exportCalendarPDF() {
                     const totalJam = lemburRecords.reduce((sum, l) => sum + parseJamLembur(l.jamLembur), 0);
                     totalJamKaryawan += totalJam;
                     
-                    // Calculate insentif
+                    // Calculate insentif for this day
                     lemburRecords.forEach(l => {
                         totalInsentifKaryawan += calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
                     });
@@ -1336,22 +1336,44 @@ async function exportCalendarPDF() {
                 }
             });
             
-            // Add totals
+            // Add totals at the end
             row.push(totalJamKaryawan.toString());
             row.push(formatCurrency(totalInsentifKaryawan));
             
-            return row;
+            tableData.push(row);
         });
         
-        // Create autoTable with custom styling
+        // Headers with Total columns
+        const dateHeaders = days.map(d => d.getDate().toString());
+        const headers = ['No', 'Nama', 'NIK', 'Posisi', ...dateHeaders, 'Total Jam', 'Total Insentif'];
+        
+        // Column styles with proper widths
+        const columnStyles = {
+            0: { cellWidth: 8, halign: 'center' },
+            1: { cellWidth: 28, halign: 'left' },
+            2: { cellWidth: 18, halign: 'center' },
+            3: { cellWidth: 24, halign: 'left' }
+        };
+        
+        // Set width for date columns (small)
+        for (let i = 4; i < 4 + days.length; i++) {
+            columnStyles[i] = { cellWidth: 7, halign: 'center' };
+        }
+        
+        // Total columns at the end
+        const totalJamIndex = 4 + days.length;
+        const totalInsentifIndex = totalJamIndex + 1;
+        columnStyles[totalJamIndex] = { cellWidth: 15, halign: 'center', fontStyle: 'bold', fillColor: [224, 242, 254] };
+        columnStyles[totalInsentifIndex] = { cellWidth: 28, halign: 'right', fontStyle: 'bold', fillColor: [224, 242, 254] };
+        
         doc.autoTable({
             startY: 28,
             head: [headers],
             body: tableData,
             theme: 'grid',
             styles: { 
-                fontSize: 7,
-                cellPadding: 1.5,
+                fontSize: 6.5,
+                cellPadding: 1.2,
                 overflow: 'linebreak',
                 halign: 'center',
                 valign: 'middle'
@@ -1360,47 +1382,37 @@ async function exportCalendarPDF() {
                 fillColor: [79, 70, 229],
                 textColor: 255,
                 fontStyle: 'bold',
-                halign: 'center'
+                halign: 'center',
+                fontSize: 7
             },
-            columnStyles: {
-                0: { cellWidth: 8, halign: 'center' },  // No
-                1: { cellWidth: 30, halign: 'left' },   // Nama
-                2: { cellWidth: 18, halign: 'center' }, // NIK
-                3: { cellWidth: 25, halign: 'left' },   // Posisi
-                // Days will auto-size
-                [headers.length - 2]: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }, // Total Jam
-                [headers.length - 1]: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }   // Total Insentif
-            },
+            columnStyles: columnStyles,
             didParseCell: function(data) {
-                // Color cells for overtime days
-                if (data.section === 'body' && data.column.index >= 4 && data.column.index < headers.length - 2) {
-                    const nik = tableData[data.row.index][2];
-                    const dayIndex = data.column.index - 4;
-                    const dateKey = days[dayIndex].toISOString().split('T')[0];
-                    
-                    const lemburRecords = lemburByNikDate[nik] ? lemburByNikDate[nik][dateKey] : null;
-                    
-                    if (lemburRecords && lemburRecords.length > 0) {
-                        const isLibur = lemburRecords.some(l => l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur'));
+                // Color date cells based on overtime type
+                if (data.section === 'body' && data.column.index >= 4 && data.column.index < totalJamIndex) {
+                    const cellValue = data.cell.text[0];
+                    if (cellValue && cellValue !== '-') {
+                        const nik = tableData[data.row.index][2];
+                        const dayIndex = data.column.index - 4;
+                        const dateKey = days[dayIndex].toISOString().split('T')[0];
                         
-                        if (isLibur) {
-                            // Red for holiday overtime
-                            data.cell.styles.fillColor = [239, 68, 68]; // red-500
-                            data.cell.styles.textColor = [255, 255, 255];
-                            data.cell.styles.fontStyle = 'bold';
-                        } else {
-                            // Green for regular overtime
-                            data.cell.styles.fillColor = [209, 250, 229]; // emerald-100
-                            data.cell.styles.textColor = [0, 0, 0];
-                            data.cell.styles.fontStyle = 'bold';
+                        const lemburRecords = lemburByNikDate[nik] ? lemburByNikDate[nik][dateKey] : null;
+                        
+                        if (lemburRecords && lemburRecords.length > 0) {
+                            const isLibur = lemburRecords.some(l => l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur'));
+                            
+                            if (isLibur) {
+                                // Red for holiday
+                                data.cell.styles.fillColor = [239, 68, 68];
+                                data.cell.styles.textColor = [255, 255, 255];
+                                data.cell.styles.fontStyle = 'bold';
+                            } else {
+                                // Green for weekday
+                                data.cell.styles.fillColor = [209, 250, 229];
+                                data.cell.styles.textColor = [0, 0, 0];
+                                data.cell.styles.fontStyle = 'bold';
+                            }
                         }
                     }
-                }
-                
-                // Highlight total columns
-                if (data.section === 'body' && (data.column.index === headers.length - 2 || data.column.index === headers.length - 1)) {
-                    data.cell.styles.fillColor = [224, 242, 254]; // blue-100
-                    data.cell.styles.fontStyle = 'bold';
                 }
             }
         });
@@ -1413,34 +1425,33 @@ async function exportCalendarPDF() {
         
         doc.setFont('helvetica', 'normal');
         
-        // Red box for holiday
+        // Red box
         doc.setFillColor(239, 68, 68);
         doc.rect(15, finalY + 2, 8, 4, 'F');
+        doc.setTextColor(0, 0, 0);
         doc.text('= Lembur Hari Libur', 25, finalY + 5);
         
-        // Green box for weekday
+        // Green box
         doc.setFillColor(209, 250, 229);
         doc.rect(65, finalY + 2, 8, 4, 'F');
-        doc.setTextColor(0, 0, 0);
         doc.text('= Lembur Hari Kerja', 75, finalY + 5);
         
         // Empty box
-        doc.setDrawColor(200, 200, 200);
+        doc.setDrawColor(200);
         doc.rect(125, finalY + 2, 8, 4);
         doc.text('= Tidak Ada Lembur', 135, finalY + 5);
         
-        // Footer with page numbers
+        // Footer
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setFont('helvetica', 'italic');
-            doc.setTextColor(100, 100, 100);
+            doc.setTextColor(100);
             doc.text(`Halaman ${i} dari ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
             doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 15, doc.internal.pageSize.height - 10);
         }
         
-        // Save
         doc.save(`Kalender_Lembur_${displayPeriod.bulan.replace(/\s/g, '_')}.pdf`);
         
         hideLoading();
