@@ -831,46 +831,76 @@ function showWhatsAppModal(nik) {
     window.pendingWhatsAppMessage = message;
 }
 
-function closeWhatsAppModal() {
-    const modal = document.getElementById('whatsappModal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-function sendWhatsAppMessage(message) {
+function sendWhatsAppMessage() {
     const phoneInput = document.getElementById('whatsappPhone');
     let phone = phoneInput.value.trim();
     
     // Validate phone number
     if (!phone) {
-        showAlert('Nomor WhatsApp belum diisi!', 'error');
+        showAlert('❌ Nomor WhatsApp belum diisi!', 'error');
+        phoneInput.focus();
         return;
     }
     
-    // Clean phone number
-    phone = phone.replace(/\D/g, ''); // Remove non-digits
+    // Clean phone number - remove all non-digits
+    phone = phone.replace(/\D/g, '');
     
     // Ensure starts with 62
     if (!phone.startsWith('62')) {
         if (phone.startsWith('0')) {
             phone = '62' + phone.substring(1);
+        } else if (phone.startsWith('8')) {
+            phone = '62' + phone;
         } else {
             phone = '62' + phone;
         }
     }
     
-    if (phone.length < 10) {
-        showAlert('Nomor WhatsApp tidak valid!', 'error');
+    // Validate length
+    if (phone.length < 10 || phone.length > 15) {
+        showAlert('❌ Nomor WhatsApp tidak valid! (min 10 digit, max 15 digit)', 'error');
+        phoneInput.focus();
         return;
     }
     
+    // Get message from global variable
+    const message = window.pendingWhatsAppMessage || '';
+    
+    if (!message) {
+        showAlert('❌ Pesan belum siap!', 'error');
+        return;
+    }
+    
+    // FIXED: Proper URL encoding for WhatsApp
+    // WhatsApp supports simple line breaks with %0A
+    const encodedMessage = encodeURIComponent(message);
+    
     // Open WhatsApp with pre-filled message
-    const whatsappURL = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const whatsappURL = `https://wa.me/${phone}?text=${encodedMessage}`;
+    
+    console.log('Opening WhatsApp:', phone);
+    console.log('Message preview:', message.substring(0, 100) + '...');
+    
+    // Open in new tab
     window.open(whatsappURL, '_blank');
     
+    // Close modal
     closeWhatsAppModal();
-    showAlert('✅ WhatsApp dibuka! Silakan kirim pesan.', 'success');
+    
+    // Show success message
+    showAlert('✅ WhatsApp dibuka! Silakan kirim pesan di aplikasi WhatsApp.', 'success');
+}
+
+// ============================================
+// FUNCTION 3: CLOSE MODAL
+// ============================================
+function closeWhatsAppModal() {
+    const modal = document.getElementById('whatsappModal');
+    if (modal) {
+        modal.remove();
+    }
+    // Clear pending message
+    window.pendingWhatsAppMessage = null;
 }
 
 // ============================================
