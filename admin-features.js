@@ -701,8 +701,8 @@ function showWhatsAppModal(nik) {
         return;
     }
     
-    // Get phone number from karyawan data (you need to add phone field to Karyawan sheet)
-    const phone = karyawan.phone || karyawan.telepon || '';
+    // Get phone number - FIXED: now reads from karyawan.telepon
+    const phone = karyawan.telepon || karyawan.phone || '';
     
     const lemburData = allLembur.filter(l => l.nik === nik);
     const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
@@ -727,20 +727,26 @@ function showWhatsAppModal(nik) {
         .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
         .slice(0, 3);
     
-    // Generate WhatsApp message
+    // Generate WhatsApp message - FIXED FORMAT
     const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     
-    let message = `*Laporan Lembur*\n\n`;
-    message += `Nama: ${karyawan.nama}\n`;
-    message += `Periode: ${displayPeriod.bulan} per tanggal ${today}\n`;
-    message += `Jumlah Lembur: ${totalJam} Jam\n`;
-    message += `Total Insentif: ${formatCurrency(totalInsentif)}\n\n`;
-    message += `Cek selengkapnya di: https://naufal-hib.github.io/lembur-lab\n\n`;
-    message += `*Riwayat Lembur 3 Terakhir:*\n`;
+    // PENTING: Gunakan line break sederhana, bukan template literal
+    let message = '*Laporan Lembur*\n\n';
+    message += 'Nama: ' + karyawan.nama + '\n';
+    message += 'Periode: ' + displayPeriod.bulan + ' per tanggal ' + today + '\n';
+    message += 'Jumlah Lembur: ' + totalJam + ' Jam\n';
+    message += 'Total Insentif: ' + formatCurrency(totalInsentif) + '\n\n';
+    message += 'Cek selengkapnya di:\n';
+    message += 'https://naufal-hib.github.io/lembur-lab\n\n';
+    message += '*Riwayat Lembur 3 Terakhir:*\n';
     
-    latestRecords.forEach((l, index) => {
-        message += `${index + 1}. ${formatDate(l.tanggal)} - ${l.jamLembur} - ${l.jenisLembur}\n`;
-    });
+    if (latestRecords.length > 0) {
+        latestRecords.forEach((l, index) => {
+            message += (index + 1) + '. ' + formatDate(l.tanggal) + ' - ' + l.jamLembur + ' - ' + l.jenisLembur + '\n';
+        });
+    } else {
+        message += 'Belum ada data lembur\n';
+    }
     
     // Create modal HTML
     const modalHTML = `
@@ -762,30 +768,44 @@ function showWhatsAppModal(nik) {
                     </div>
                     
                     <div class="space-y-4">
+                        <!-- Info Karyawan -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p class="text-sm font-bold text-blue-900">📋 ${karyawan.nama}</p>
+                            <p class="text-xs text-blue-700 mt-1">NIK: ${karyawan.nik} | ${karyawan.jabatan}</p>
+                        </div>
+                        
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Nomor WhatsApp Karyawan:</label>
-                            <input type="tel" id="whatsappPhone" value="${phone}" placeholder="628123456789" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm sm:text-base" required>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">
+                                📱 Nomor WhatsApp:
+                                ${phone ? '<span class="text-green-600 text-xs ml-2">✓ Terisi otomatis</span>' : '<span class="text-orange-600 text-xs ml-2">⚠️ Harap isi manual</span>'}
+                            </label>
+                            <input 
+                                type="tel" 
+                                id="whatsappPhone" 
+                                value="${phone}" 
+                                placeholder="628123456789" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm sm:text-base font-mono" 
+                                required
+                            >
                             <p class="text-xs text-gray-500 mt-1">Format: 628xxx (tanpa +, spasi, atau tanda hubung)</p>
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Preview Pesan:</label>
-                            <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 text-sm whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
-${message}
-                            </div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">📝 Preview Pesan:</label>
+                            <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 text-sm whitespace-pre-wrap font-mono max-h-64 overflow-y-auto" style="line-height: 1.6;">${message}</div>
                         </div>
                         
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <p class="text-xs sm:text-sm text-blue-800">
-                                <strong>ℹ️ Info:</strong> Klik tombol di bawah untuk membuka WhatsApp dengan pesan yang sudah disiapkan. Pastikan nomor telepon benar.
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <p class="text-xs sm:text-sm text-green-800">
+                                <strong>✓ Cara Kerja:</strong> Klik tombol di bawah → WhatsApp terbuka otomatis → Pesan sudah terisi → Tinggal klik Send
                             </p>
                         </div>
                         
                         <div class="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-3 pt-4 border-t">
                             <button onclick="closeWhatsAppModal()" class="px-4 sm:px-6 py-2 sm:py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition shadow-md text-sm sm:text-base order-2 sm:order-1">
-                                Batal
+                                ✕ Batal
                             </button>
-                            <button onclick="sendWhatsAppMessage(\`${message.replace(/\n/g, '%0A').replace(/`/g, '\\`')}\`)" class="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition shadow-md text-sm sm:text-base order-1 sm:order-2 flex items-center justify-center space-x-2">
+                            <button onclick="sendWhatsAppMessage()" class="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition shadow-md text-sm sm:text-base order-1 sm:order-2 flex items-center justify-center space-x-2">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                                 </svg>
@@ -806,6 +826,9 @@ ${message}
     
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Store message in global variable for sendWhatsAppMessage
+    window.pendingWhatsAppMessage = message;
 }
 
 function closeWhatsAppModal() {
