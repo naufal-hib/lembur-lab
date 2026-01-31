@@ -641,17 +641,17 @@ function changeMonth(delta) {
 
 function changePage(direction) {
     const userLembur = allLembur.filter(l => l.nik === currentUser.nik);
-    const periodLembur = filterLemburByPeriod(userLembur, selectedCutOff);
+    const periodLembur = selectedCutOff ? filterLemburByPeriod(userLembur, selectedCutOff) : userLembur;
     const sortedData = [...periodLembur].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
     
     const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
     
     if (direction === -1 && currentPage > 1) {
         currentPage--;
-        renderHistoryTable(sortedData);
+        renderHistoryTable(periodLembur);
     } else if (direction === 1 && currentPage < totalPages) {
         currentPage++;
-        renderHistoryTable(sortedData);
+        renderHistoryTable(periodLembur);
     }
 }
 
@@ -734,13 +734,17 @@ function renderHistoryTable(lemburData) {
 }
 
 // ============================================
-// CHANGE PASSWORD FEATURE
+// CHANGE PASSWORD FEATURE - FIXED
 // ============================================
 function showChangePasswordModal() {
+    console.log('showChangePasswordModal called');
     const modal = document.getElementById('changePasswordModal');
     if (modal) {
         modal.style.display = 'flex';
-        document.getElementById('changePasswordForm').reset();
+        const form = document.getElementById('changePasswordForm');
+        if (form) form.reset();
+    } else {
+        console.error('changePasswordModal not found');
     }
 }
 
@@ -806,16 +810,25 @@ async function changePassword(event) {
 }
 
 // ============================================
-// DOWNLOAD PDF WITH PERIOD SELECTION
+// DOWNLOAD PDF WITH PERIOD SELECTION - FIXED
 // ============================================
 function showDownloadPDFModal() {
+    console.log('showDownloadPDFModal called');
     const modal = document.getElementById('downloadPDFModal');
     const selector = document.getElementById('pdfPeriodSelector');
     
-    if (!modal || !selector) return;
+    if (!modal || !selector) {
+        console.error('downloadPDFModal or pdfPeriodSelector not found');
+        return;
+    }
     
     // Populate period options
     const periods = activeCutOffs.length > 0 ? activeCutOffs : allCutOff;
+    
+    if (periods.length === 0) {
+        showAlert('Tidak ada periode tersedia', 'warning');
+        return;
+    }
     
     selector.innerHTML = periods.map((period, index) => `
         <option value="${index}">
@@ -842,6 +855,7 @@ function closeDownloadPDFModal() {
 }
 
 function downloadReportPDF() {
+    console.log('downloadReportPDF called');
     const selector = document.getElementById('pdfPeriodSelector');
     const selectedIndex = parseInt(selector.value);
     
