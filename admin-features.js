@@ -1,5 +1,5 @@
 // ============================================
-// ADMIN FEATURES - ENHANCED VERSION
+// ADMIN FEATURES - ENHANCED VERSION WITH MOBILE RESPONSIVE
 // ============================================
 
 // ============================================
@@ -87,11 +87,11 @@ function renderOverviewTab() {
         }
     }
     
-    // NEW: Render calendar view for all employees
+    // Render calendar view for all employees
     renderAdminCalendarView();
 }
 
-// NEW: Admin Calendar View (like image 1)
+// IMPROVED: Admin Calendar View with Mobile Responsive
 function renderAdminCalendarView() {
     const calendarContainer = document.getElementById('adminCalendarView');
     if (!calendarContainer) return;
@@ -114,7 +114,7 @@ function renderAdminCalendarView() {
         periodSelectorHtml = `
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Periode:</label>
-                <select id="adminPeriodSelector" onchange="changeAdminPeriod(this.value)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                <select id="adminPeriodSelector" onchange="changeAdminPeriod(this.value)" class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base">
                     ${activeCutOffs.map((period, index) => `
                         <option value="${index}" ${period === displayPeriod ? 'selected' : ''}>
                             ${period.bulan} (${formatDate(period.tanggalMulai)} - ${formatDate(period.tanggalAkhir)})
@@ -151,49 +151,49 @@ function renderAdminCalendarView() {
         }
     });
     
-    // Build calendar table
+    // Build calendar table - MOBILE RESPONSIVE
     let calendarHtml = `
-        <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-6">
             ${periodSelectorHtml}
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-2xl font-bold text-gray-800 flex items-center">
-                    <svg class="w-7 h-7 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+                <h3 class="text-lg sm:text-2xl font-bold text-gray-800 flex items-center">
+                    <svg class="w-5 h-5 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
-                    Kalender Lembur Semua Karyawan
+                    Kalender Lembur
                 </h3>
-                <button onclick="exportCalendarPDF()" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition shadow-md hover:shadow-lg transform hover:scale-105 flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onclick="exportCalendarPDF()" class="px-3 sm:px-5 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition shadow-md text-xs sm:text-sm flex items-center space-x-2 w-full sm:w-auto justify-center">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
                     <span>Export PDF</span>
                 </button>
             </div>
-            <div class="flex justify-center space-x-8 text-sm mb-6">
+            <div class="flex flex-wrap justify-center gap-3 sm:gap-8 text-xs sm:text-sm mb-4 sm:mb-6">
                 <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-red-500 border-2 border-red-700 rounded shadow flex items-center justify-center text-white font-bold text-xs">7</div>
+                    <div class="w-6 h-6 sm:w-8 sm:h-8 bg-red-500 border-2 border-red-700 rounded shadow flex items-center justify-center text-white font-bold text-xs">7</div>
                     <span class="text-gray-700 font-medium">Hari Libur</span>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-emerald-100 border-2 border-emerald-400 rounded flex items-center justify-center text-gray-900 font-bold text-xs">3</div>
+                    <div class="w-6 h-6 sm:w-8 sm:h-8 bg-emerald-100 border-2 border-emerald-400 rounded flex items-center justify-center text-gray-900 font-bold text-xs">3</div>
                     <span class="text-gray-700 font-medium">Hari Kerja</span>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-50 border border-gray-300 rounded"></div>
+                    <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gray-50 border border-gray-300 rounded"></div>
                     <span class="text-gray-700 font-medium">Tidak Ada Lembur</span>
                 </div>
             </div>
             
-            <div class="overflow-x-auto">
-                <table class="w-full border-collapse text-xs">
+            <div class="calendar-scroll overflow-x-auto rounded-lg border border-gray-200">
+                <table class="w-full border-collapse text-xs sm:text-sm">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th class="border border-gray-300 px-3 py-2 text-left font-bold text-gray-700 sticky left-0 bg-gray-100 z-10">NO</th>
-                            <th class="border border-gray-300 px-3 py-2 text-left font-bold text-gray-700 sticky left-0 bg-gray-100 z-10" style="left: 40px;">NAMA</th>
-                            <th class="border border-gray-300 px-3 py-2 text-left font-bold text-gray-700 sticky left-0 bg-gray-100 z-10" style="left: 180px;">NIK ERP</th>
-                            <th class="border border-gray-300 px-3 py-2 text-left font-bold text-gray-700 sticky left-0 bg-gray-100 z-10" style="left: 280px;">POSISI</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky-col sticky-col-1 bg-gray-100 z-20 min-w-[40px]">NO</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky-col sticky-col-2 bg-gray-100 z-20 min-w-[110px] sm:min-w-[140px]">NAMA</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky-col sticky-col-3 bg-gray-100 z-20 min-w-[80px] sm:min-w-[100px]">NIK</th>
+                            <th class="border border-gray-300 px-2 sm:px-3 py-2 text-left font-bold text-gray-700 sticky-col sticky-col-4 bg-gray-100 z-20 min-w-[100px] sm:min-w-[120px]">POSISI</th>
                             ${days.map(day => `
-                                <th class="border border-gray-300 px-2 py-2 text-center font-bold text-gray-700 min-w-[40px]">
+                                <th class="border border-gray-300 px-2 py-2 text-center font-bold text-gray-700 min-w-[40px] sm:min-w-[50px]">
                                     ${day.getDate()}
                                 </th>
                             `).join('')}
@@ -203,10 +203,10 @@ function renderAdminCalendarView() {
                         ${allKaryawan.map((karyawan, index) => {
                             return `
                                 <tr class="hover:bg-gray-50">
-                                    <td class="border border-gray-300 px-3 py-2 font-medium sticky left-0 bg-white">${index + 1}</td>
-                                    <td class="border border-gray-300 px-3 py-2 sticky left-0 bg-white" style="left: 40px;">${karyawan.nama}</td>
-                                    <td class="border border-gray-300 px-3 py-2 sticky left-0 bg-white" style="left: 180px;">${karyawan.nik}</td>
-                                    <td class="border border-gray-300 px-3 py-2 sticky left-0 bg-white" style="left: 280px;">${karyawan.jabatan}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 font-medium sticky-col sticky-col-1 bg-white z-10">${index + 1}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky-col sticky-col-2 bg-white z-10 text-xs sm:text-sm">${karyawan.nama.length > 15 ? karyawan.nama.substring(0, 15) + '...' : karyawan.nama}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky-col sticky-col-3 bg-white z-10 text-xs sm:text-sm">${karyawan.nik}</td>
+                                    <td class="border border-gray-300 px-2 sm:px-3 py-2 sticky-col sticky-col-4 bg-white z-10 text-xs sm:text-sm">${karyawan.jabatan.length > 12 ? karyawan.jabatan.substring(0, 12) + '...' : karyawan.jabatan}</td>
                                     ${days.map(day => {
                                         const dateKey = day.toISOString().split('T')[0];
                                         const lemburRecords = lemburByNikDate[karyawan.nik] ? lemburByNikDate[karyawan.nik][dateKey] : null;
@@ -216,18 +216,18 @@ function renderAdminCalendarView() {
                                             const isLibur = lemburRecords.some(l => l.jenisLembur && l.jenisLembur.toLowerCase().includes('libur'));
                                             
                                             return `
-                                                <td class="border-2 px-3 py-3 text-center font-extrabold text-base ${
+                                                <td class="border-2 px-2 sm:px-3 py-2 sm:py-3 text-center font-extrabold text-sm sm:text-base ${
                                                     isLibur 
                                                         ? 'bg-red-500 text-white border-red-700 shadow-md' 
                                                         : 'bg-emerald-100 text-gray-900 border-emerald-400'
                                                 }" 
-                                                style="min-width: 50px;"
+                                                style="min-width: 40px;"
                                                 title="${lemburRecords.map(l => `${l.jenisLembur}: ${l.jamLembur}`).join('\\n')}">
                                                     ${totalJam}
                                                 </td>
                                             `;
                                         } else {
-                                            return `<td class="border border-gray-300 px-3 py-3 bg-gray-50" style="min-width: 50px;"></td>`;
+                                            return `<td class="border border-gray-300 px-2 sm:px-3 py-2 sm:py-3 bg-gray-50" style="min-width: 40px;"></td>`;
                                         }
                                     }).join('')}
                                 </tr>
@@ -237,18 +237,18 @@ function renderAdminCalendarView() {
                 </table>
             </div>
             
-            <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                 <div class="flex items-start">
-                    <svg class="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                     </svg>
                     <div>
-                        <p class="text-sm font-semibold text-blue-800 mb-1">💡 Cara Baca Kalender:</p>
-                        <ul class="text-sm text-blue-700 space-y-1">
-                            <li>• <strong class="font-bold">Kotak Merah + Angka</strong> = Lembur Hari Libur (angka menunjukkan jumlah jam)</li>
-                            <li>• <strong class="font-bold">Kotak Hijau + Angka</strong> = Lembur Hari Kerja (angka menunjukkan jumlah jam)</li>
-                            <li>• <strong class="font-bold">Kotak Kosong</strong> = Tidak ada lembur di tanggal tersebut</li>
-                            <li>• Scroll ke kanan untuk melihat tanggal lainnya dalam periode</li>
+                        <p class="text-xs sm:text-sm font-semibold text-blue-800 mb-1">💡 Cara Baca Kalender:</p>
+                        <ul class="text-xs sm:text-sm text-blue-700 space-y-1">
+                            <li>• <strong class="font-bold">Kotak Merah + Angka</strong> = Lembur Hari Libur</li>
+                            <li>• <strong class="font-bold">Kotak Hijau + Angka</strong> = Lembur Hari Kerja</li>
+                            <li>• <strong class="font-bold">Kotak Kosong</strong> = Tidak ada lembur</li>
+                            <li class="hidden sm:list-item">• Scroll horizontal untuk melihat semua tanggal</li>
                         </ul>
                     </div>
                 </div>
@@ -265,7 +265,7 @@ function changeAdminPeriod(index) {
 }
 
 // ============================================
-// KARYAWAN TAB
+// KARYAWAN TAB - MOBILE RESPONSIVE
 // ============================================
 function renderKaryawanTab() {
     const tbody = document.getElementById('karyawanTable');
@@ -273,11 +273,11 @@ function renderKaryawanTab() {
     
     tbody.innerHTML = allKaryawan.map(k => `
         <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3 text-sm font-mono font-semibold text-gray-800">${k.nik}</td>
-            <td class="px-4 py-3 text-sm font-medium text-gray-900">${k.nama}</td>
-            <td class="px-4 py-3 text-sm text-gray-700">${k.jabatan}</td>
-            <td class="px-4 py-3 text-sm">
-                <span class="px-3 py-1 rounded-full text-xs font-semibold ${
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-mono font-semibold text-gray-800">${k.nik}</td>
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-900">${k.nama}</td>
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">${k.jabatan}</td>
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                <span class="px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
                     k.level === 'supervisor' 
                         ? 'bg-purple-100 text-purple-800 border border-purple-300' 
                         : 'bg-blue-100 text-blue-800 border border-blue-300'
@@ -285,12 +285,12 @@ function renderKaryawanTab() {
                     ${k.level.toUpperCase()}
                 </span>
             </td>
-            <td class="px-4 py-3 text-sm">
-                <code class="bg-gray-100 px-3 py-1 rounded border border-gray-300 font-mono text-xs">${k.password}</code>
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">
+                <code class="bg-gray-100 px-2 sm:px-3 py-1 rounded border border-gray-300 font-mono text-xs">${k.password}</code>
             </td>
-            <td class="px-4 py-3 text-sm">
-                <button onclick="viewKaryawanDetail('${k.nik}')" class="text-indigo-600 hover:text-indigo-800 font-semibold hover:underline transition">
-                    👁️ Lihat Detail
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                <button onclick="viewKaryawanDetail('${k.nik}')" class="text-indigo-600 hover:text-indigo-800 font-semibold hover:underline transition text-xs sm:text-sm">
+                    👁️ <span class="hidden sm:inline">Detail</span>
                 </button>
             </td>
         </tr>
@@ -298,7 +298,7 @@ function renderKaryawanTab() {
 }
 
 // ============================================
-// LEMBUR TAB
+// LEMBUR TAB - MOBILE RESPONSIVE
 // ============================================
 function renderLemburTab() {
     const tbody = document.getElementById('lemburTable');
@@ -311,11 +311,11 @@ function renderLemburTab() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="9" class="px-3 py-12 text-center text-gray-500">
-                    <svg class="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <p class="text-lg font-semibold">Belum ada data lembur untuk periode ini</p>
-                    <p class="text-sm text-gray-400 mt-2">Import data Excel untuk menambahkan data lembur</p>
+                    <p class="text-base sm:text-lg font-semibold">Belum ada data lembur</p>
+                    <p class="text-xs sm:text-sm text-gray-400 mt-2">Import data Excel untuk menambahkan</p>
                 </td>
             </tr>
         `;
@@ -337,12 +337,12 @@ function renderLemburTab() {
         
         return `
             <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-3 py-3 text-sm text-gray-700">${index + 1}</td>
-                <td class="px-3 py-3 text-sm font-medium text-gray-800">${formatDate(l.tanggal)}</td>
-                <td class="px-3 py-3 text-sm font-mono font-semibold text-gray-800">${l.nik}</td>
-                <td class="px-3 py-3 text-sm font-medium text-gray-900">${l.nama}</td>
-                <td class="px-3 py-3 text-sm text-gray-700">${l.jabatan}</td>
-                <td class="px-3 py-3 text-sm">
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">${index + 1}</td>
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-800">${formatDate(l.tanggal)}</td>
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-mono font-semibold text-gray-800">${l.nik}</td>
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-900">${l.nama}</td>
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">${l.jabatan}</td>
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs">
                     <span class="px-2 py-1 rounded-full text-xs font-semibold ${
                         l.jenisLembur.toLowerCase().includes('libur') 
                             ? 'bg-red-100 text-red-800 border border-red-300' 
@@ -351,9 +351,9 @@ function renderLemburTab() {
                         ${l.jenisLembur}
                     </span>
                 </td>
-                <td class="px-3 py-3 text-sm font-bold text-indigo-600">${l.jamLembur}</td>
-                <td class="px-3 py-3 text-sm font-bold text-green-600">${formatCurrency(insentif)}</td>
-                <td class="px-3 py-3 text-sm text-gray-600">${l.keterangan || '-'}</td>
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-bold text-indigo-600">${l.jamLembur}</td>
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-bold text-green-600">${formatCurrency(insentif)}</td>
+                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden md:table-cell">${l.keterangan || '-'}</td>
             </tr>
         `;
     }).join('');
@@ -381,47 +381,47 @@ function renderLemburRecap(periodLembur) {
     const recapElement = document.getElementById('lemburRecap');
     if (recapElement) {
         recapElement.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg shadow-md border border-blue-200">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-3 sm:p-5 rounded-lg shadow-md border border-blue-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-3xl font-bold text-blue-600">${totalRecords}</p>
-                            <p class="text-blue-700 font-medium text-sm mt-1">Total Records</p>
+                            <p class="text-xl sm:text-3xl font-bold text-blue-600">${totalRecords}</p>
+                            <p class="text-blue-700 font-medium text-xs sm:text-sm mt-1">Total Records</p>
                         </div>
-                        <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-blue-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
                 </div>
-                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-5 rounded-lg shadow-md border border-indigo-200">
+                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-3 sm:p-5 rounded-lg shadow-md border border-indigo-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-3xl font-bold text-indigo-600">${totalHours}</p>
-                            <p class="text-indigo-700 font-medium text-sm mt-1">Total Jam Lembur</p>
+                            <p class="text-xl sm:text-3xl font-bold text-indigo-600">${totalHours}</p>
+                            <p class="text-indigo-700 font-medium text-xs sm:text-sm mt-1">Total Jam</p>
                         </div>
-                        <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-indigo-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
-                <div class="bg-gradient-to-br from-green-50 to-green-100 p-5 rounded-lg shadow-md border border-green-200">
+                <div class="bg-gradient-to-br from-green-50 to-green-100 p-3 sm:p-5 rounded-lg shadow-md border border-green-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-2xl font-bold text-green-600">${formatCurrency(totalInsentif)}</p>
-                            <p class="text-green-700 font-medium text-sm mt-1">Total Insentif</p>
+                            <p class="text-base sm:text-2xl font-bold text-green-600">${formatCurrency(totalInsentif)}</p>
+                            <p class="text-green-700 font-medium text-xs sm:text-sm mt-1">Total Insentif</p>
                         </div>
-                        <svg class="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-green-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
-                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-lg shadow-md border border-purple-200">
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-3 sm:p-5 rounded-lg shadow-md border border-purple-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-3xl font-bold text-purple-600">${allKaryawan.length}</p>
-                            <p class="text-purple-700 font-medium text-sm mt-1">Total Karyawan</p>
+                            <p class="text-xl sm:text-3xl font-bold text-purple-600">${allKaryawan.length}</p>
+                            <p class="text-purple-700 font-medium text-xs sm:text-sm mt-1">Total Karyawan</p>
                         </div>
-                        <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-purple-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
                     </div>
@@ -432,7 +432,7 @@ function renderLemburRecap(periodLembur) {
 }
 
 // ============================================
-// CUT-OFF TAB (MULTI-ACTIVE SUPPORT)
+// CUT-OFF TAB - MOBILE RESPONSIVE
 // ============================================
 function renderCutOffTab() {
     const tbody = document.getElementById('cutoffTable');
@@ -440,28 +440,28 @@ function renderCutOffTab() {
     
     tbody.innerHTML = allCutOff.map((c, index) => `
         <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3 text-sm font-semibold text-gray-800">${c.bulan}</td>
-            <td class="px-4 py-3 text-sm text-gray-700">${formatDate(c.tanggalMulai)}</td>
-            <td class="px-4 py-3 text-sm text-gray-700">${formatDate(c.tanggalAkhir)}</td>
-            <td class="px-4 py-3 text-sm">
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-800">${c.bulan}</td>
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">${formatDate(c.tanggalMulai)}</td>
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">${formatDate(c.tanggalAkhir)}</td>
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                 <label class="inline-flex items-center cursor-pointer">
                     <input type="checkbox" 
                            ${c.status === 'Aktif' ? 'checked' : ''} 
                            onchange="toggleCutOffStatus(${index})"
                            class="sr-only peer">
-                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                    <span class="ms-3 text-sm font-medium ${c.status === 'Aktif' ? 'text-green-700' : 'text-gray-600'}">
+                    <div class="relative w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    <span class="ms-2 sm:ms-3 text-xs sm:text-sm font-medium ${c.status === 'Aktif' ? 'text-green-700' : 'text-gray-600'}">
                         ${c.status === 'Aktif' ? '✓ Aktif' : 'Non-Aktif'}
                     </span>
                 </label>
             </td>
-            <td class="px-4 py-3 text-sm">
-                <div class="flex space-x-2">
-                    <button onclick="showCutOffModal(true, ${index})" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs px-3 py-1 rounded-md hover:bg-indigo-50 transition border border-indigo-200">
-                        ✏️ Edit
+            <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                <div class="flex flex-col sm:flex-row gap-1 sm:space-x-2">
+                    <button onclick="showCutOffModal(true, ${index})" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs px-2 sm:px-3 py-1 rounded-md hover:bg-indigo-50 transition border border-indigo-200">
+                        ✏️ <span class="hidden sm:inline">Edit</span>
                     </button>
-                    <button onclick="deleteCutOff(${index})" class="text-red-600 hover:text-red-800 font-semibold text-xs px-3 py-1 rounded-md hover:bg-red-50 transition border border-red-200">
-                        🗑️ Hapus
+                    <button onclick="deleteCutOff(${index})" class="text-red-600 hover:text-red-800 font-semibold text-xs px-2 sm:px-3 py-1 rounded-md hover:bg-red-50 transition border border-red-200">
+                        🗑️ <span class="hidden sm:inline">Hapus</span>
                     </button>
                 </div>
             </td>
@@ -469,7 +469,7 @@ function renderCutOffTab() {
     `).join('');
 }
 
-// NEW: Toggle cut-off status (multi-active support)
+// Toggle cut-off status (multi-active support)
 async function toggleCutOffStatus(index) {
     const cutoff = allCutOff[index];
     const newStatus = cutoff.status === 'Aktif' ? '' : 'Aktif';
@@ -485,18 +485,17 @@ async function toggleCutOffStatus(index) {
         showLoading();
         await callAppsScript('updateCutOff', { data: allCutOff });
         hideLoading();
-        showAlert('✅ Status cut-off berhasil diubah dan tersimpan ke Google Sheets!', 'success');
+        showAlert('✅ Status cut-off berhasil diubah!', 'success');
     } catch (error) {
         hideLoading();
         console.error('Error syncing to Sheets:', error);
-        showAlert('⚠️ Status diubah di sistem, tetapi gagal sync ke Google Sheets. Silakan cek koneksi.', 'warning');
+        showAlert('⚠️ Status diubah di sistem, tetapi gagal sync ke Google Sheets.', 'warning');
     }
     
     renderCutOffTab();
     renderOverviewTab();
     renderLemburTab();
 }
-
 // ============================================
 // EMPLOYEE DETAIL MODAL
 // ============================================
@@ -530,31 +529,31 @@ function viewKaryawanDetail(nik) {
     
     const modalContent = document.getElementById('employeeModalContent');
     modalContent.innerHTML = `
-        <div class="space-y-6">
+        <div class="space-y-4 sm:space-y-6">
             <!-- Profil Karyawan -->
-            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-5 border border-indigo-200">
-                <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 sm:p-5 border border-indigo-200">
+                <h4 class="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
                     Profil Karyawan
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div class="bg-white rounded-lg p-3 shadow-sm">
                         <p class="text-xs text-gray-600 font-medium">NIK</p>
-                        <p class="font-bold text-gray-800 text-lg mt-1">${karyawan.nik}</p>
+                        <p class="font-bold text-gray-800 text-base sm:text-lg mt-1">${karyawan.nik}</p>
                     </div>
                     <div class="bg-white rounded-lg p-3 shadow-sm">
                         <p class="text-xs text-gray-600 font-medium">Nama Lengkap</p>
-                        <p class="font-bold text-gray-800 text-lg mt-1">${karyawan.nama}</p>
+                        <p class="font-bold text-gray-800 text-base sm:text-lg mt-1">${karyawan.nama}</p>
                     </div>
                     <div class="bg-white rounded-lg p-3 shadow-sm">
                         <p class="text-xs text-gray-600 font-medium">Jabatan</p>
-                        <p class="font-semibold text-gray-800 mt-1">${karyawan.jabatan}</p>
+                        <p class="font-semibold text-gray-800 text-sm sm:text-base mt-1">${karyawan.jabatan}</p>
                     </div>
                     <div class="bg-white rounded-lg p-3 shadow-sm">
                         <p class="text-xs text-gray-600 font-medium">Level</p>
-                        <span class="inline-block px-3 py-1 mt-1 rounded-full text-sm font-semibold ${
+                        <span class="inline-block px-3 py-1 mt-1 rounded-full text-xs sm:text-sm font-semibold ${
                             karyawan.level === 'supervisor' 
                                 ? 'bg-purple-100 text-purple-800 border border-purple-300' 
                                 : 'bg-blue-100 text-blue-800 border border-blue-300'
@@ -564,34 +563,34 @@ function viewKaryawanDetail(nik) {
                     </div>
                     <div class="md:col-span-2 bg-white rounded-lg p-3 shadow-sm">
                         <p class="text-xs text-gray-600 font-medium">Password</p>
-                        <code class="bg-gray-100 px-3 py-1 rounded border border-gray-300 font-mono text-sm inline-block mt-1">${karyawan.password}</code>
+                        <code class="bg-gray-100 px-3 py-1 rounded border border-gray-300 font-mono text-xs sm:text-sm inline-block mt-1">${karyawan.password}</code>
                     </div>
                 </div>
             </div>
 
             <!-- Statistik Periode -->
-            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-5 border border-purple-200">
-                <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 sm:p-5 border border-purple-200">
+                <h4 class="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
-                    Statistik Periode ${displayPeriod ? displayPeriod.bulan : 'Aktif'}
+                    Statistik ${displayPeriod ? displayPeriod.bulan : 'Aktif'}
                 </h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div class="text-center bg-white p-4 rounded-lg shadow-md border border-indigo-100">
-                        <p class="text-4xl font-bold text-indigo-600">${totalJam}</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+                    <div class="text-center bg-white p-3 sm:p-4 rounded-lg shadow-md border border-indigo-100">
+                        <p class="text-2xl sm:text-4xl font-bold text-indigo-600">${totalJam}</p>
                         <p class="text-xs text-gray-600 font-medium mt-1">Total Jam</p>
                     </div>
-                    <div class="text-center bg-white p-4 rounded-lg shadow-md border border-green-100">
-                        <p class="text-2xl font-bold text-green-600">${formatCurrency(totalInsentif)}</p>
-                        <p class="text-xs text-gray-600 font-medium mt-1">Total Insentif</p>
+                    <div class="text-center bg-white p-3 sm:p-4 rounded-lg shadow-md border border-green-100">
+                        <p class="text-lg sm:text-2xl font-bold text-green-600">${formatCurrency(totalInsentif)}</p>
+                        <p class="text-xs text-gray-600 font-medium mt-1">Insentif</p>
                     </div>
-                    <div class="text-center bg-white p-4 rounded-lg shadow-md border border-blue-100">
-                        <p class="text-4xl font-bold text-blue-600">${totalHariKerja}</p>
+                    <div class="text-center bg-white p-3 sm:p-4 rounded-lg shadow-md border border-blue-100">
+                        <p class="text-2xl sm:text-4xl font-bold text-blue-600">${totalHariKerja}</p>
                         <p class="text-xs text-gray-600 font-medium mt-1">Hari Kerja</p>
                     </div>
-                    <div class="text-center bg-white p-4 rounded-lg shadow-md border border-red-100">
-                        <p class="text-4xl font-bold text-red-600">${totalHariLibur}</p>
+                    <div class="text-center bg-white p-3 sm:p-4 rounded-lg shadow-md border border-red-100">
+                        <p class="text-2xl sm:text-4xl font-bold text-red-600">${totalHariLibur}</p>
                         <p class="text-xs text-gray-600 font-medium mt-1">Hari Libur</p>
                     </div>
                 </div>
@@ -599,21 +598,21 @@ function viewKaryawanDetail(nik) {
 
             <!-- Riwayat Lembur -->
             <div>
-                <h4 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <h4 class="text-base sm:text-lg font-bold text-gray-800 mb-3 flex items-center">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     Riwayat Lembur Terbaru
                 </h4>
                 ${periodLembur.length > 0 ? `
                     <div class="overflow-x-auto rounded-lg border border-gray-200 shadow">
-                        <table class="w-full text-sm">
+                        <table class="w-full text-xs sm:text-sm">
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                                 <tr>
-                                    <th class="px-4 py-3 text-left font-bold text-gray-700">Tanggal</th>
-                                    <th class="px-4 py-3 text-left font-bold text-gray-700">Jenis</th>
-                                    <th class="px-4 py-3 text-left font-bold text-gray-700">Jam</th>
-                                    <th class="px-4 py-3 text-left font-bold text-gray-700">Insentif</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-bold text-gray-700">Tanggal</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-bold text-gray-700">Jenis</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-bold text-gray-700">Jam</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-bold text-gray-700">Insentif</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
@@ -621,8 +620,8 @@ function viewKaryawanDetail(nik) {
                                     const insentif = calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
                                     return `
                                         <tr class="hover:bg-gray-50 transition-colors">
-                                            <td class="px-4 py-3">${formatDate(l.tanggal)}</td>
-                                            <td class="px-4 py-3">
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3">${formatDate(l.tanggal)}</td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3">
                                                 <span class="px-2 py-1 rounded-full text-xs font-semibold ${
                                                     l.jenisLembur.toLowerCase().includes('libur') 
                                                         ? 'bg-red-100 text-red-800 border border-red-300' 
@@ -631,38 +630,38 @@ function viewKaryawanDetail(nik) {
                                                     ${l.jenisLembur}
                                                 </span>
                                             </td>
-                                            <td class="px-4 py-3 font-bold text-indigo-600">${l.jamLembur}</td>
-                                            <td class="px-4 py-3 font-bold text-green-600">${formatCurrency(insentif)}</td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 font-bold text-indigo-600">${l.jamLembur}</td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 font-bold text-green-600">${formatCurrency(insentif)}</td>
                                         </tr>
                                     `;
                                 }).join('')}
                             </tbody>
                         </table>
                         ${periodLembur.length > 10 ? `
-                            <div class="p-4 text-center text-gray-500 text-sm bg-gray-50">
+                            <div class="p-3 sm:p-4 text-center text-gray-500 text-xs sm:text-sm bg-gray-50">
                                 Menampilkan 10 dari ${periodLembur.length} records
                             </div>
                         ` : ''}
                     </div>
                 ` : `
-                    <div class="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
-                        <svg class="w-20 h-20 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="text-center py-8 sm:py-12 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+                        <svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        <p class="font-semibold">Belum ada data lembur untuk periode ini</p>
+                        <p class="font-semibold text-sm sm:text-base">Belum ada data lembur</p>
                     </div>
                 `}
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex justify-end space-x-3 pt-4 border-t">
-                <button onclick="exportKaryawanPDF('${nik}')" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition shadow-md hover:shadow-lg flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-3 pt-4 border-t">
+                <button onclick="exportKaryawanPDF('${nik}')" class="px-4 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition shadow-md text-sm sm:text-base flex items-center justify-center space-x-2 order-1">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
                     <span>Export PDF</span>
                 </button>
-                <button onclick="closeEmployeeModal()" class="px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition shadow-md">
+                <button onclick="closeEmployeeModal()" class="px-4 sm:px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition shadow-md text-sm sm:text-base order-2">
                     Tutup
                 </button>
             </div>
@@ -734,13 +733,11 @@ async function readExcelFile(file) {
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // Read with header at row 3 (0-indexed = 2)
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
                     range: 3,
                     defval: ''
                 });
                 
-                // Filter out empty rows
                 const filteredData = jsonData.filter(row => {
                     const nik = row.NIK || row.nik;
                     const tanggal = row.TANGGAL || row.Tanggal;
@@ -768,7 +765,7 @@ async function readExcelFile(file) {
 function displayImportPreview(data) {
     const preview = document.getElementById('importPreview');
     if (!data || data.length === 0) {
-        preview.innerHTML = '<p class="text-red-600 font-semibold">❌ Tidak ada data yang ditemukan dalam file Excel</p>';
+        preview.innerHTML = '<p class="text-red-600 font-semibold text-sm">❌ Tidak ada data yang ditemukan</p>';
         document.getElementById('importBtn').disabled = true;
         return;
     }
@@ -776,63 +773,60 @@ function displayImportPreview(data) {
     const { duplicates, newRecords } = detectDuplicates(data);
     
     preview.innerHTML = `
-        <div class="space-y-4">
-            <div class="bg-blue-50 border border-blue-300 rounded-lg p-4 shadow-sm">
-                <p class="text-blue-800 font-bold flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <div class="space-y-3 sm:space-y-4">
+            <div class="bg-blue-50 border border-blue-300 rounded-lg p-3 sm:p-4 shadow-sm">
+                <p class="text-blue-800 font-bold text-sm sm:text-base flex items-center">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                     </svg>
-                    File valid dan siap diimport
+                    File valid
                 </p>
-                <div class="mt-3 space-y-1 text-sm">
-                    <p class="text-blue-700">📊 Total rows dalam file: <strong>${data.length}</strong></p>
-                    <p class="text-green-700">➕ Data baru yang akan ditambahkan: <strong>${newRecords.length}</strong></p>
-                    <p class="text-yellow-700">⚠️ Data duplikat (akan diabaikan): <strong>${duplicates.length}</strong></p>
+                <div class="mt-2 space-y-1 text-xs sm:text-sm">
+                    <p class="text-blue-700">📊 Total: <strong>${data.length}</strong></p>
+                    <p class="text-green-700">➕ Baru: <strong>${newRecords.length}</strong></p>
+                    <p class="text-yellow-700">⚠️ Duplikat: <strong>${duplicates.length}</strong></p>
                 </div>
             </div>
             
             ${duplicates.length > 0 ? `
-                <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 shadow-sm">
-                    <p class="text-yellow-800 font-bold text-sm mb-2">⚠️ Data Duplikat (10 pertama):</p>
-                    <div class="max-h-40 overflow-y-auto text-xs space-y-1 bg-white rounded p-2 border border-yellow-200">
-                        ${duplicates.slice(0, 10).map(d => {
+                <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <p class="text-yellow-800 font-bold text-xs sm:text-sm mb-2">⚠️ Duplikat (5 pertama):</p>
+                    <div class="max-h-32 overflow-y-auto text-xs space-y-1 bg-white rounded p-2 border border-yellow-200">
+                        ${duplicates.slice(0, 5).map(d => {
                             const nik = d.NIK || d.nik;
                             const tanggal = d.TANGGAL || d.Tanggal;
                             const jam = d['JAM LEMBUR'] || d['JAM LEMBUR '] || d['Jam Lembur'];
-                            return `<p class="text-yellow-700">• NIK ${nik} - ${formatExcelDate(tanggal)} - ${jam}</p>`;
+                            return `<p class="text-yellow-700">• ${nik} - ${formatExcelDate(tanggal)} - ${jam}</p>`;
                         }).join('')}
-                        ${duplicates.length > 10 ? `<p class="text-yellow-600 italic mt-2">...dan ${duplicates.length - 10} data duplikat lagi</p>` : ''}
+                        ${duplicates.length > 5 ? `<p class="text-yellow-600 italic mt-1">...+${duplicates.length - 5} lagi</p>` : ''}
                     </div>
                 </div>
             ` : ''}
             
-            <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm">
-                <p class="text-gray-800 font-bold text-sm mb-3">👁️ Preview Data Baru (5 pertama):</p>
+            <div class="bg-gray-50 border border-gray-300 rounded-lg p-3 sm:p-4 shadow-sm">
+                <p class="text-gray-800 font-bold text-xs sm:text-sm mb-2">👁️ Preview (3 pertama):</p>
                 <div class="overflow-x-auto rounded-lg border border-gray-200">
                     <table class="w-full text-xs bg-white">
                         <thead class="bg-gradient-to-r from-gray-100 to-gray-200">
                             <tr>
-                                <th class="px-3 py-2 text-left font-bold text-gray-700">NIK</th>
-                                <th class="px-3 py-2 text-left font-bold text-gray-700">Nama</th>
-                                <th class="px-3 py-2 text-left font-bold text-gray-700">Tanggal</th>
-                                <th class="px-3 py-2 text-left font-bold text-gray-700">Jam</th>
-                                <th class="px-3 py-2 text-left font-bold text-gray-700">Jenis</th>
+                                <th class="px-2 py-2 text-left font-bold text-gray-700">NIK</th>
+                                <th class="px-2 py-2 text-left font-bold text-gray-700">Tanggal</th>
+                                <th class="px-2 py-2 text-left font-bold text-gray-700">Jam</th>
+                                <th class="px-2 py-2 text-left font-bold text-gray-700">Jenis</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
-                            ${newRecords.slice(0, 5).map(row => {
+                            ${newRecords.slice(0, 3).map(row => {
                                 const nik = row.NIK || row.nik;
-                                const nama = row['NAMA LENGKAP'] || row['Nama Lengkap'] || '-';
                                 const tanggal = row.TANGGAL || row.Tanggal;
                                 const jam = row['JAM LEMBUR'] || row['JAM LEMBUR '] || row['Jam Lembur'];
                                 const jenis = row['JENIS LEMBUR'] || row['Jenis Lembur'] || 'Hari Kerja';
                                 return `
                                     <tr class="hover:bg-gray-50">
-                                        <td class="px-3 py-2 font-mono">${nik}</td>
-                                        <td class="px-3 py-2">${nama}</td>
-                                        <td class="px-3 py-2">${formatExcelDate(tanggal)}</td>
-                                        <td class="px-3 py-2 font-semibold">${jam}</td>
-                                        <td class="px-3 py-2">
+                                        <td class="px-2 py-2 font-mono">${nik}</td>
+                                        <td class="px-2 py-2">${formatExcelDate(tanggal)}</td>
+                                        <td class="px-2 py-2 font-semibold">${jam}</td>
+                                        <td class="px-2 py-2">
                                             <span class="px-2 py-1 rounded-full text-xs ${jenis.toLowerCase().includes('libur') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">
                                                 ${jenis}
                                             </span>
@@ -913,7 +907,6 @@ function formatExcelDate(excelDate) {
     return String(excelDate);
 }
 
-// IMPROVED: Auto-sync to Google Sheets
 async function importData() {
     console.log('importData() called');
     if (!window.pendingImportData || window.pendingImportData.length === 0) {
@@ -955,24 +948,20 @@ async function importData() {
         
         console.log('Processed data:', processedData.length, 'records');
         
-        // Add to local data
         allLembur = [...allLembur, ...processedData];
         saveToLocalStorage('lembur', allLembur);
         
-        // Sync to Google Sheets
         try {
             await callAppsScript('importLembur', { data: processedData });
             hideLoading();
-            showAlert(`✅ Berhasil mengimport ${processedData.length} data dan tersimpan ke Google Sheets!`, 'success');
+            showAlert(`✅ Berhasil mengimport ${processedData.length} data!`, 'success');
         } catch (error) {
             hideLoading();
             console.error('Error syncing to Sheets:', error);
-            showAlert(`⚠️ Data tersimpan di sistem (${processedData.length} records), tetapi gagal sync ke Google Sheets. Silakan refresh halaman untuk memuat ulang data dari Sheets.`, 'warning');
+            showAlert(`⚠️ Data tersimpan (${processedData.length} records), gagal sync ke Sheets.`, 'warning');
         }
         
         closeImportModal();
-        
-        // Refresh display
         renderAdminDashboard();
         
     } catch (error) {
@@ -983,7 +972,7 @@ async function importData() {
 }
 
 // ============================================
-// CUT-OFF MANAGEMENT (WITH AUTO-SYNC)
+// CUT-OFF MANAGEMENT
 // ============================================
 function showCutOffModal(edit = false, index = null) {
     const modal = document.getElementById('cutoffModal');
@@ -999,7 +988,7 @@ function showCutOffModal(edit = false, index = null) {
         document.getElementById('cutoffStatus').checked = cutoff.status === 'Aktif';
         form.dataset.editIndex = index;
     } else {
-        modalTitle.textContent = 'Tambah Periode Cut-Off Baru';
+        modalTitle.textContent = 'Tambah Periode';
         form.reset();
         delete form.dataset.editIndex;
     }
@@ -1054,16 +1043,15 @@ async function saveCutOff(event) {
     activeCutOffs = allCutOff.filter(c => c.status === 'Aktif');
     saveToLocalStorage('cutoff', allCutOff);
 
-    // Sync to Google Sheets
     try {
         showLoading();
         await callAppsScript('updateCutOff', { data: allCutOff });
         hideLoading();
-        showAlert('✅ Periode cut-off berhasil disimpan ke Google Sheets!', 'success');
+        showAlert('✅ Periode berhasil disimpan!', 'success');
     } catch (error) {
         hideLoading();
         console.error('Error syncing to Sheets:', error);
-        showAlert('⚠️ Data tersimpan di sistem, tetapi gagal sync ke Google Sheets.', 'warning');
+        showAlert('⚠️ Data tersimpan, gagal sync ke Sheets.', 'warning');
     }
 
     closeCutOffModal();
@@ -1072,22 +1060,21 @@ async function saveCutOff(event) {
 }
 
 async function deleteCutOff(index) {
-    if (!confirm('Hapus periode cut-off ini? Data lembur tidak akan dihapus.')) return;
+    if (!confirm('Hapus periode cut-off ini?')) return;
     
     allCutOff.splice(index, 1);
     activeCutOffs = allCutOff.filter(c => c.status === 'Aktif');
     saveToLocalStorage('cutoff', allCutOff);
 
-    // Sync to Google Sheets
     try {
         showLoading();
         await callAppsScript('updateCutOff', { data: allCutOff });
         hideLoading();
-        showAlert('✅ Periode cut-off berhasil dihapus dari Google Sheets!', 'success');
+        showAlert('✅ Periode berhasil dihapus!', 'success');
     } catch (error) {
         hideLoading();
         console.error('Error syncing to Sheets:', error);
-        showAlert('⚠️ Data dihapus di sistem, tetapi gagal sync ke Google Sheets.', 'warning');
+        showAlert('⚠️ Data dihapus, gagal sync ke Sheets.', 'warning');
     }
 
     renderCutOffTab();
@@ -1121,14 +1108,12 @@ function exportLemburToCSV() {
             'Jenis Lembur': l.jenisLembur,
             'Jam Lembur': l.jamLembur,
             'Insentif': insentif,
-            'Insentif Kopi': l.insentifKopi,
-            'Keterangan': l.keterangan,
-            'Pengecekan': l.pengecekan
+            'Keterangan': l.keterangan
         };
     });
 
     const headers = Object.keys(csvData[0]);
-    let csv = '\uFEFF' + headers.join(',') + '\n'; // Add BOM for Excel
+    let csv = '\uFEFF' + headers.join(',') + '\n';
 
     csvData.forEach(row => {
         const values = headers.map(header => {
@@ -1142,7 +1127,7 @@ function exportLemburToCSV() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Laporan_Lembur_${displayPeriod ? displayPeriod.bulan.replace(/\s/g, '_') : 'All'}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `Laporan_Lembur_${displayPeriod ? displayPeriod.bulan.replace(/\s/g, '_') : 'All'}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1236,7 +1221,7 @@ async function exportKaryawanPDF(nik) {
         doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 20, 290);
     }
 
-    doc.save(`Laporan_Lembur_${karyawan.nik}_${karyawan.nama.replace(/\s/g, '_')}.pdf`);
+    doc.save(`Laporan_${karyawan.nik}_${karyawan.nama.replace(/\s/g, '_')}.pdf`);
 }
 
 // ============================================
@@ -1273,29 +1258,24 @@ async function exportCalendarPDF() {
     
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for wide table
+        const doc = new jsPDF('l', 'mm', 'a4');
         
-        // Title
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.text('KALENDER LEMBUR KARYAWAN', doc.internal.pageSize.width / 2, 15, { align: 'center' });
         
-        // Period info
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text(`Periode: ${displayPeriod.bulan} (${formatDate(displayPeriod.tanggalMulai)} - ${formatDate(displayPeriod.tanggalAkhir)})`, doc.internal.pageSize.width / 2, 22, { align: 'center' });
         
-        // Get date range
         const startDate = new Date(displayPeriod.tanggalMulai);
         const endDate = new Date(displayPeriod.tanggalAkhir);
         
-        // Calculate days in period
         const days = [];
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
             days.push(new Date(d));
         }
         
-        // Group lembur by NIK and date
         const lemburByNikDate = {};
         allLembur.forEach(l => {
             const lemburDate = new Date(l.tanggal);
@@ -1311,15 +1291,14 @@ async function exportCalendarPDF() {
             }
         });
         
-        // Prepare table data
         const headers = ['No', 'Nama', 'NIK', 'Posisi', ...days.map(d => d.getDate())];
         
         const tableData = allKaryawan.map((karyawan, index) => {
             const row = [
                 index + 1,
-                karyawan.nama.substring(0, 20), // Truncate long names
+                karyawan.nama.substring(0, 20),
                 karyawan.nik,
-                karyawan.jabatan.substring(0, 15) // Truncate long positions
+                karyawan.jabatan.substring(0, 15)
             ];
             
             days.forEach(day => {
@@ -1337,7 +1316,6 @@ async function exportCalendarPDF() {
             return row;
         });
         
-        // Add table
         doc.autoTable({
             startY: 28,
             head: [headers],
@@ -1359,24 +1337,9 @@ async function exportCalendarPDF() {
                 1: { cellWidth: 35 },
                 2: { cellWidth: 20, halign: 'center' },
                 3: { cellWidth: 30 }
-                // Date columns will auto-size
-            },
-            didDrawCell: function(data) {
-                // Color cells with overtime
-                if (data.section === 'body' && data.column.index > 3) {
-                    const cellValue = data.cell.raw;
-                    if (cellValue && cellValue !== '-') {
-                        // Check if it's holiday overtime (you could enhance this)
-                        doc.setFillColor(220, 252, 231); // Light green
-                        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(cellValue, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center', baseline: 'middle' });
-                    }
-                }
             }
         });
         
-        // Footer
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
@@ -1386,8 +1349,7 @@ async function exportCalendarPDF() {
             doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 15, doc.internal.pageSize.height - 10);
         }
         
-        // Save PDF
-        doc.save(`Kalender_Lembur_${displayPeriod.bulan.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.save(`Kalender_${displayPeriod.bulan.replace(/\s/g, '_')}.pdf`);
         
         hideLoading();
         showAlert('✅ PDF berhasil diexport!', 'success');
