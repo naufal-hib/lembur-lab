@@ -1,5 +1,5 @@
 // ============================================
-// ADMIN FEATURES - ENHANCED VERSION WITH MOBILE RESPONSIVE
+// ADMIN FEATURES - ENHANCED VERSION WITH MOBILE RESPONSIVE & WHATSAPP
 // ============================================
 
 // ============================================
@@ -91,10 +91,7 @@ function renderOverviewTab() {
     renderAdminCalendarView();
 }
 
-// IMPROVED: Admin Calendar View with Mobile Responsive - FIXED
-// IMPROVED: Admin Calendar View with FIXED Mobile Responsive Sticky Columns
-// IMPROVED: Admin Calendar View - FIXED for Desktop & Mobile
-// FIXED: Admin Calendar View - Simple approach, no complex sticky
+// Admin Calendar View
 function renderAdminCalendarView() {
     const calendarContainer = document.getElementById('adminCalendarView');
     if (!calendarContainer) return;
@@ -262,6 +259,7 @@ function renderAdminCalendarView() {
     
     calendarContainer.innerHTML = calendarHtml;
 }
+
 function changeAdminPeriod(index) {
     selectedCutOff = activeCutOffs[parseInt(index)];
     renderAdminDashboard();
@@ -292,16 +290,21 @@ function renderKaryawanTab() {
                 <code class="bg-gray-100 px-2 sm:px-3 py-1 rounded border border-gray-300 font-mono text-xs">${k.password}</code>
             </td>
             <td class="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
-                <button onclick="viewKaryawanDetail('${k.nik}')" class="text-indigo-600 hover:text-indigo-800 font-semibold hover:underline transition text-xs sm:text-sm">
-                    👁️ <span class="hidden sm:inline">Detail</span>
-                </button>
+                <div class="flex flex-col sm:flex-row gap-1 sm:space-x-2">
+                    <button onclick="viewKaryawanDetail('${k.nik}')" class="text-indigo-600 hover:text-indigo-800 font-semibold hover:underline transition text-xs sm:text-sm px-2 py-1">
+                        👁️ Detail
+                    </button>
+                    <button onclick="showWhatsAppModal('${k.nik}')" class="text-green-600 hover:text-green-800 font-semibold hover:underline transition text-xs sm:text-sm px-2 py-1">
+                        📱 WA
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
 }
 
 // ============================================
-// LEMBUR TAB - MOBILE RESPONSIVE
+// LEMBUR TAB - MOBILE RESPONSIVE WITH FIXED TABLE
 // ============================================
 function renderLemburTab() {
     const tbody = document.getElementById('lemburTable');
@@ -340,13 +343,13 @@ function renderLemburTab() {
         
         return `
             <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">${index + 1}</td>
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-800">${formatDate(l.tanggal)}</td>
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-mono font-semibold text-gray-800">${l.nik}</td>
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-900">${l.nama}</td>
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">${l.jabatan}</td>
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs">
-                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${
+                <td class="px-2 py-2 text-xs text-center text-gray-700">${index + 1}</td>
+                <td class="px-2 py-2 text-xs font-medium text-gray-800 whitespace-nowrap">${formatDate(l.tanggal)}</td>
+                <td class="px-2 py-2 text-xs font-mono font-semibold text-gray-800">${l.nik}</td>
+                <td class="px-2 py-2 text-xs font-medium text-gray-900" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="${l.nama}">${l.nama}</td>
+                <td class="px-2 py-2 text-xs text-gray-700 hidden sm:table-cell" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis;" title="${l.jabatan}">${l.jabatan}</td>
+                <td class="px-2 py-2 text-xs">
+                    <span class="px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                         l.jenisLembur.toLowerCase().includes('libur') 
                             ? 'bg-red-100 text-red-800 border border-red-300' 
                             : 'bg-blue-100 text-blue-800 border border-blue-300'
@@ -354,9 +357,9 @@ function renderLemburTab() {
                         ${l.jenisLembur}
                     </span>
                 </td>
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-bold text-indigo-600">${l.jamLembur}</td>
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-bold text-green-600">${formatCurrency(insentif)}</td>
-                <td class="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden md:table-cell">${l.keterangan || '-'}</td>
+                <td class="px-2 py-2 text-xs font-bold text-indigo-600 text-center">${l.jamLembur}</td>
+                <td class="px-2 py-2 text-xs font-bold text-green-600 text-right whitespace-nowrap">${formatCurrency(insentif)}</td>
+                <td class="px-2 py-2 text-xs text-gray-600 hidden md:table-cell" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="${l.keterangan || '-'}">${l.keterangan || '-'}</td>
             </tr>
         `;
     }).join('');
@@ -659,13 +662,19 @@ function viewKaryawanDetail(nik) {
 
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-3 pt-4 border-t">
-                <button onclick="exportKaryawanPDF('${nik}')" class="px-4 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition shadow-md text-sm sm:text-base flex items-center justify-center space-x-2 order-1">
+                <button onclick="showWhatsAppModal('${nik}')" class="px-4 sm:px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition shadow-md text-sm sm:text-base flex items-center justify-center space-x-2 order-1">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    </svg>
+                    <span>Kirim WA</span>
+                </button>
+                <button onclick="exportKaryawanPDF('${nik}')" class="px-4 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition shadow-md text-sm sm:text-base flex items-center justify-center space-x-2 order-2">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
                     <span>Export PDF</span>
                 </button>
-                <button onclick="closeEmployeeModal()" class="px-4 sm:px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition shadow-md text-sm sm:text-base order-2">
+                <button onclick="closeEmployeeModal()" class="px-4 sm:px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition shadow-md text-sm sm:text-base order-3">
                     Tutup
                 </button>
             </div>
@@ -680,6 +689,165 @@ function closeEmployeeModal() {
     if (modal) {
         modal.style.display = 'none';
     }
+}
+
+// ============================================
+// WHATSAPP FEATURE - NEW!
+// ============================================
+function showWhatsAppModal(nik) {
+    const karyawan = allKaryawan.find(k => k.nik === nik);
+    if (!karyawan) {
+        showAlert('Karyawan tidak ditemukan', 'error');
+        return;
+    }
+    
+    // Get phone number from karyawan data (you need to add phone field to Karyawan sheet)
+    const phone = karyawan.phone || karyawan.telepon || '';
+    
+    const lemburData = allLembur.filter(l => l.nik === nik);
+    const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
+    
+    if (!displayPeriod) {
+        showAlert('Tidak ada periode aktif', 'warning');
+        return;
+    }
+    
+    const periodLembur = filterLemburByPeriod(lemburData, displayPeriod);
+    
+    let totalJam = 0;
+    let totalInsentif = 0;
+    
+    periodLembur.forEach(l => {
+        totalJam += parseJamLembur(l.jamLembur);
+        totalInsentif += calculateInsentif(l.jamLembur, l.jenisLembur, karyawan.level);
+    });
+    
+    // Get 3 latest records
+    const latestRecords = [...periodLembur]
+        .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
+        .slice(0, 3);
+    
+    // Generate WhatsApp message
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    let message = `*Laporan Lembur*\n\n`;
+    message += `Nama: ${karyawan.nama}\n`;
+    message += `Periode: ${displayPeriod.bulan} per tanggal ${today}\n`;
+    message += `Jumlah Lembur: ${totalJam} Jam\n`;
+    message += `Total Insentif: ${formatCurrency(totalInsentif)}\n\n`;
+    message += `Cek selengkapnya di: https://naufal-hib.github.io/lembur-lab\n\n`;
+    message += `*Riwayat Lembur 3 Terakhir:*\n`;
+    
+    latestRecords.forEach((l, index) => {
+        message += `${index + 1}. ${formatDate(l.tanggal)} - ${l.jamLembur} - ${l.jenisLembur}\n`;
+    });
+    
+    // Create modal HTML
+    const modalHTML = `
+        <div id="whatsappModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+                <div class="p-4 sm:p-6">
+                    <div class="flex items-center justify-between mb-4 border-b pb-4">
+                        <h3 class="text-xl sm:text-2xl font-black text-gray-800 flex items-center">
+                            <svg class="w-6 h-6 sm:w-7 sm:h-7 mr-2 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                            Kirim Pesan WhatsApp
+                        </h3>
+                        <button onclick="closeWhatsAppModal()" class="text-gray-400 hover:text-gray-600 transition">
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Nomor WhatsApp Karyawan:</label>
+                            <input type="tel" id="whatsappPhone" value="${phone}" placeholder="628123456789" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm sm:text-base" required>
+                            <p class="text-xs text-gray-500 mt-1">Format: 628xxx (tanpa +, spasi, atau tanda hubung)</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Preview Pesan:</label>
+                            <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 text-sm whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
+${message}
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p class="text-xs sm:text-sm text-blue-800">
+                                <strong>ℹ️ Info:</strong> Klik tombol di bawah untuk membuka WhatsApp dengan pesan yang sudah disiapkan. Pastikan nomor telepon benar.
+                            </p>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-3 pt-4 border-t">
+                            <button onclick="closeWhatsAppModal()" class="px-4 sm:px-6 py-2 sm:py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition shadow-md text-sm sm:text-base order-2 sm:order-1">
+                                Batal
+                            </button>
+                            <button onclick="sendWhatsAppMessage(\`${message.replace(/\n/g, '%0A').replace(/`/g, '\\`')}\`)" class="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition shadow-md text-sm sm:text-base order-1 sm:order-2 flex items-center justify-center space-x-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                </svg>
+                                <span>Kirim via WhatsApp</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('whatsappModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeWhatsAppModal() {
+    const modal = document.getElementById('whatsappModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function sendWhatsAppMessage(message) {
+    const phoneInput = document.getElementById('whatsappPhone');
+    let phone = phoneInput.value.trim();
+    
+    // Validate phone number
+    if (!phone) {
+        showAlert('Nomor WhatsApp belum diisi!', 'error');
+        return;
+    }
+    
+    // Clean phone number
+    phone = phone.replace(/\D/g, ''); // Remove non-digits
+    
+    // Ensure starts with 62
+    if (!phone.startsWith('62')) {
+        if (phone.startsWith('0')) {
+            phone = '62' + phone.substring(1);
+        } else {
+            phone = '62' + phone;
+        }
+    }
+    
+    if (phone.length < 10) {
+        showAlert('Nomor WhatsApp tidak valid!', 'error');
+        return;
+    }
+    
+    // Open WhatsApp with pre-filled message
+    const whatsappURL = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappURL, '_blank');
+    
+    closeWhatsAppModal();
+    showAlert('✅ WhatsApp dibuka! Silakan kirim pesan.', 'success');
 }
 
 // ============================================
@@ -1248,12 +1416,8 @@ function switchTab(tabName) {
 }
 
 // ============================================
-// EXPORT CALENDAR TO PDF
+// EXPORT CALENDAR TO PDF - FIXED (NO CROP)
 // ============================================
-// ============================================
-// EXPORT CALENDAR TO PDF - WITH COLORS & TOTALS
-// ============================================
-// EXPORT CALENDAR TO PDF - WITH COLORS & TOTALS (FIXED)
 async function exportCalendarPDF() {
     const displayPeriod = selectedCutOff || (activeCutOffs.length > 0 ? activeCutOffs[activeCutOffs.length - 1] : null);
     
@@ -1266,16 +1430,16 @@ async function exportCalendarPDF() {
     
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4');
+        const doc = new jsPDF('l', 'mm', 'a3'); // A3 LANDSCAPE for more space
         
         // Header
-        doc.setFontSize(16);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('KALENDER LEMBUR KARYAWAN', doc.internal.pageSize.width / 2, 15, { align: 'center' });
+        doc.text('KALENDER LEMBUR KARYAWAN', doc.internal.pageSize.width / 2, 12, { align: 'center' });
         
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Periode: ${displayPeriod.bulan} (${formatDate(displayPeriod.tanggalMulai)} - ${formatDate(displayPeriod.tanggalAkhir)})`, doc.internal.pageSize.width / 2, 22, { align: 'center' });
+        doc.text(`Periode: ${displayPeriod.bulan} (${formatDate(displayPeriod.tanggalMulai)} - ${formatDate(displayPeriod.tanggalAkhir)})`, doc.internal.pageSize.width / 2, 18, { align: 'center' });
         
         const startDate = new Date(displayPeriod.tanggalMulai);
         const endDate = new Date(displayPeriod.tanggalAkhir);
@@ -1308,9 +1472,9 @@ async function exportCalendarPDF() {
         allKaryawan.forEach((karyawan, index) => {
             const row = [
                 index + 1,
-                karyawan.nama.substring(0, 18),
+                karyawan.nama.substring(0, 15), // Truncate name
                 karyawan.nik,
-                karyawan.jabatan.substring(0, 12)
+                karyawan.jabatan.substring(0, 10) // Truncate position
             ];
             
             let totalJamKaryawan = 0;
@@ -1338,42 +1502,51 @@ async function exportCalendarPDF() {
             
             // Add totals at the end
             row.push(totalJamKaryawan.toString());
-            row.push(formatCurrency(totalInsentifKaryawan));
+            
+            // Format currency without "Rp" prefix to save space
+            const insentifFormatted = new Intl.NumberFormat('id-ID').format(totalInsentifKaryawan);
+            row.push(insentifFormatted);
             
             tableData.push(row);
         });
         
         // Headers with Total columns
         const dateHeaders = days.map(d => d.getDate().toString());
-        const headers = ['No', 'Nama', 'NIK', 'Posisi', ...dateHeaders, 'Total Jam', 'Total Insentif'];
+        const headers = ['No', 'Nama', 'NIK', 'Posisi', ...dateHeaders, 'Tot Jam', 'Tot Insentif'];
         
-        // Column styles with proper widths
+        // Dynamically calculate column widths
+        const pageWidth = doc.internal.pageSize.width - 20; // Margin
+        const fixedColumnsWidth = 8 + 25 + 15 + 18 + 12 + 25; // No, Nama, NIK, Posisi, Total Jam, Total Insentif
+        const remainingWidth = pageWidth - fixedColumnsWidth;
+        const dateColumnWidth = remainingWidth / days.length;
+        
+        // Column styles with dynamic widths
         const columnStyles = {
             0: { cellWidth: 8, halign: 'center' },
-            1: { cellWidth: 28, halign: 'left' },
-            2: { cellWidth: 18, halign: 'center' },
-            3: { cellWidth: 24, halign: 'left' }
+            1: { cellWidth: 25, halign: 'left' },
+            2: { cellWidth: 15, halign: 'center' },
+            3: { cellWidth: 18, halign: 'left' }
         };
         
-        // Set width for date columns (small)
+        // Set width for date columns (dynamic)
         for (let i = 4; i < 4 + days.length; i++) {
-            columnStyles[i] = { cellWidth: 7, halign: 'center' };
+            columnStyles[i] = { cellWidth: dateColumnWidth, halign: 'center' };
         }
         
         // Total columns at the end
         const totalJamIndex = 4 + days.length;
         const totalInsentifIndex = totalJamIndex + 1;
-        columnStyles[totalJamIndex] = { cellWidth: 15, halign: 'center', fontStyle: 'bold', fillColor: [224, 242, 254] };
-        columnStyles[totalInsentifIndex] = { cellWidth: 28, halign: 'right', fontStyle: 'bold', fillColor: [224, 242, 254] };
+        columnStyles[totalJamIndex] = { cellWidth: 12, halign: 'center', fontStyle: 'bold', fillColor: [224, 242, 254] };
+        columnStyles[totalInsentifIndex] = { cellWidth: 25, halign: 'right', fontStyle: 'bold', fillColor: [224, 242, 254] };
         
         doc.autoTable({
-            startY: 28,
+            startY: 22,
             head: [headers],
             body: tableData,
             theme: 'grid',
             styles: { 
-                fontSize: 6.5,
-                cellPadding: 1.2,
+                fontSize: 5.5, // SMALLER FONT
+                cellPadding: 0.8,
                 overflow: 'linebreak',
                 halign: 'center',
                 valign: 'middle'
@@ -1383,7 +1556,7 @@ async function exportCalendarPDF() {
                 textColor: 255,
                 fontStyle: 'bold',
                 halign: 'center',
-                fontSize: 7
+                fontSize: 6
             },
             columnStyles: columnStyles,
             didParseCell: function(data) {
@@ -1414,48 +1587,49 @@ async function exportCalendarPDF() {
                         }
                     }
                 }
-            }
+            },
+            margin: { top: 22, right: 10, bottom: 20, left: 10 }
         });
         
         // Legend
-        const finalY = doc.lastAutoTable.finalY + 5;
-        doc.setFontSize(8);
+        const finalY = doc.lastAutoTable.finalY + 3;
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'bold');
-        doc.text('Keterangan:', 15, finalY);
+        doc.text('Keterangan:', 10, finalY);
         
         doc.setFont('helvetica', 'normal');
         
         // Red box
         doc.setFillColor(239, 68, 68);
-        doc.rect(15, finalY + 2, 8, 4, 'F');
+        doc.rect(10, finalY + 1, 6, 3, 'F');
         doc.setTextColor(0, 0, 0);
-        doc.text('= Lembur Hari Libur', 25, finalY + 5);
+        doc.text('= Lembur Hari Libur', 18, finalY + 3);
         
         // Green box
         doc.setFillColor(209, 250, 229);
-        doc.rect(65, finalY + 2, 8, 4, 'F');
-        doc.text('= Lembur Hari Kerja', 75, finalY + 5);
+        doc.rect(55, finalY + 1, 6, 3, 'F');
+        doc.text('= Lembur Hari Kerja', 63, finalY + 3);
         
         // Empty box
         doc.setDrawColor(200);
-        doc.rect(125, finalY + 2, 8, 4);
-        doc.text('= Tidak Ada Lembur', 135, finalY + 5);
+        doc.rect(110, finalY + 1, 6, 3);
+        doc.text('= Tidak Ada Lembur', 118, finalY + 3);
         
         // Footer
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
-            doc.setFontSize(8);
+            doc.setFontSize(7);
             doc.setFont('helvetica', 'italic');
             doc.setTextColor(100);
-            doc.text(`Halaman ${i} dari ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-            doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 15, doc.internal.pageSize.height - 10);
+            doc.text(`Halaman ${i} dari ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8, { align: 'center' });
+            doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 10, doc.internal.pageSize.height - 8);
         }
         
         doc.save(`Kalender_Lembur_${displayPeriod.bulan.replace(/\s/g, '_')}.pdf`);
         
         hideLoading();
-        showAlert('✅ PDF berhasil diexport dengan warna dan total!', 'success');
+        showAlert('✅ PDF berhasil diexport (A3 landscape, tidak terpotong)!', 'success');
         
     } catch (error) {
         hideLoading();
@@ -1464,4 +1638,4 @@ async function exportCalendarPDF() {
     }
 }
 
-console.log('✅ admin-features.js loaded');
+console.log('✅ admin-features.js (FIXED) loaded');
